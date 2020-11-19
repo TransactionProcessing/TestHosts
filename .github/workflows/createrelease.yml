@@ -31,7 +31,7 @@ jobs:
         
     - name: Publish Images to Docker Hub
       run: |
-        docker login --username=${{ secrets.CANNISTER_USERNAME }} --password=${{ secrets.CANNISTER_PASSWORD }}
+        docker login --username=${{ secrets.CANNISTER_USERNAME }} --password=${{ secrets.CANNISTER_PASSWORD }} cloud.canister.io:5000
         docker push cloud.canister.io:5000/golfhandicapping:latest
         docker push cloud.canister.io:5000/golfhandicapping:${{ steps.get_version.outputs.VERSION }}
         
