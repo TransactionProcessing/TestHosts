@@ -27,13 +27,13 @@ jobs:
             
     - name: Build Docker Images 
       run: |
-        docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag docker.pkg.github.com/stuartferguson/testhosts:latest --tag docker.pkg.github.com/stuartferguson/testhosts:${{ steps.get_version.outputs.VERSION }}       
+        docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag docker.pkg.github.com/stuartferguson/testhosts/testhosts:latest --tag docker.pkg.github.com/stuartferguson/testhosts/testhosts:${{ steps.get_version.outputs.VERSION }}       
         
     - name: Publish Images to Docker Hub
       run: |
         docker login docker.pkg.github.com -u ${{ secrets.GITHUBPACKAGE_USER }} --password=${{ secrets.GITHUBPACKAGE_PASSWORD }}
-        docker push docker.pkg.github.com/stuartferguson/testhosts:latest
-        docker push docker.pkg.github.com/stuartferguson/testhosts:${{ steps.get_version.outputs.VERSION }}
+        docker push docker.pkg.github.com/stuartferguson/testhosts/testhosts:latest
+        docker push docker.pkg.github.com/stuartferguson/testhosts/testhosts:${{ steps.get_version.outputs.VERSION }}
         
     - name: Publish API
       run: dotnet publish "TestHosts\TestHosts\TestHosts.csproj" --configuration Release --output publishOutput
