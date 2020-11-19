@@ -13,17 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2.3.4
 
     - name: Get the version
       id: get_version
       run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.102
-
+          
     - name: Restore Nuget Packages
       run: dotnet restore TestHosts/TestHosts.sln --source https://api.nuget.org/v3/index.json --source https://www.myget.org/F/transactionprocessing/api/v3/index.json
 
@@ -32,32 +27,27 @@ jobs:
             
     - name: Build Docker Images 
       run: |
-        docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:latest --tag stuartferguson/testhosts:${{ steps.get_version.outputs.VERSION }}       
+        docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag cloud.canister.io:5000/golfhandicapping:latest --tag cloud.canister.io:5000/golfhandicapping:${{ steps.get_version.outputs.VERSION }}       
         
     - name: Publish Images to Docker Hub
       run: |
-        docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
-        docker push stuartferguson/testhosts:latest
-        docker push stuartferguson/testhosts:${{ steps.get_version.outputs.VERSION }}
+        docker login --username=${{ secrets.CANNISTER_USERNAME }} --password=${{ secrets.CANNISTER_PASSWORD }}
+        docker push cloud.canister.io:5000/golfhandicapping:latest
+        docker push cloud.canister.io:5000/golfhandicapping:${{ steps.get_version.outputs.VERSION }}
         
     - name: Publish API
       run: dotnet publish "TestHosts\TestHosts\TestHosts.csproj" --configuration Release --output publishOutput
 
-    - name: Setup .NET Core 2.0
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 2.0.0
-
-    - name: Extract Octopus Tools
+    - name: Install Octopus CLI
       run: |
-        mkdir /opt/octo
-        cd /opt/octo
-        wget -O /opt/octo/octopus.zip https://download.octopusdeploy.com/octopus-tools/6.12.0/OctopusTools.6.12.0.portable.zip
-        unzip /opt/octo/octopus.zip
-        chmod +x /opt/octo/Octo
+        sudo apt update && sudo apt install --no-install-recommends gnupg curl ca-certificates apt-transport-https && \
+        curl -sSfL https://apt.octopus.com/public.key | sudo apt-key add - && \
+        sudo sh -c "echo deb https://apt.octopus.com/ stable main > /etc/apt/sources.list.d/octopus.com.list" && \
+        sudo apt update && sudo apt install octopuscli
+
     - name: Pack Files for Octopus
       run: >-
-        /opt/octo/Octo pack
+        octo pack
         --outFolder /home/runner/work/TestHosts/TestHosts
         --basePath /home/runner/work/TestHosts/TestHosts/publishOutput
         --id TestHosts
@@ -65,9 +55,10 @@ jobs:
         --format zip
         --verbose
         --logLevel=verbose
+    
     - name: Push Package to Octopus
       run: >-
-        /opt/octo/Octo push
+        octo push
         --server ${{ secrets.OCTOPUS_URL }}
         --apiKey ${{ secrets.OCTOPUS_APIKEY }}
         --package /home/runner/work/TestHosts/TestHosts/TestHosts.${{ steps.get_version.outputs.VERSION }}.zip
@@ -75,7 +66,7 @@ jobs:
     
     - name: Get Release
       id: getrelease
-      uses: octokit/request-action@v1.x
+      uses: octokit/request-action@v2.0.17
       with:
           route: GET /repos/StuartFerguson/TestHosts/releases/tags/${{ steps.get_version.outputs.VERSION }}
       env:
@@ -90,7 +81,7 @@ jobs:
     
     - name: Create & Deploy Release in Octopus
       run: >-
-        /opt/octo/Octo create-release
+        octo create-release
         --server ${{ secrets.OCTOPUS_URL }}
         --apiKey ${{ secrets.OCTOPUS_APIKEY }}
         --project "Test Hosts"
