@@ -10,6 +10,7 @@ namespace TestHosts.Controllers
     using System.IO;
     using System.Xml;
     using System.Xml.Serialization;
+    using DataTransferObjects.Safaricom;
     using Shared.Logger;
 
     [Route("api/safaricom")]
@@ -92,86 +93,4 @@ namespace TestHosts.Controllers
             return "Topup Successful";
         }
     }
-
-
-    // NOTE: Generated code may require at least .NET Framework 4.5 or .NET Core/Standard 2.0.
-    /// <remarks/>
-    [System.SerializableAttribute()]
-    [System.ComponentModel.DesignerCategoryAttribute("code")]
-    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true, Namespace = "http://safaricom.co.ke/Pinless/keyaccounts/")]
-    [System.Xml.Serialization.XmlRootAttribute(Namespace = "http://safaricom.co.ke/Pinless/keyaccounts/", IsNullable = false, ElementName = "COMMAND")]
-    public class SafaricomRequest
-    { 
-        [XmlElement(ElementName = "TYPE")]
-        public String Type { get; set; }
-
-        [XmlElement(ElementName = "DATE")]
-        public String Date { get; set; }
-
-        [XmlElement(ElementName = "EXTNWCODE")]
-        public String NetworkCode { get; set; }
-
-        [XmlElement(ElementName = "MSISDN")]
-        public String BankMSISDN { get; set; }
-
-        [XmlElement(ElementName = "PIN")]
-        public String Pin { get; set; }
-
-        [XmlElement(ElementName = "LOGINID")]
-        public String LOGINID { get; set; }
-
-        [XmlElement(ElementName = "PASSWORD")]
-        public String PASSWORD { get; set; }
-
-        [XmlElement(ElementName = "EXTCODE")]
-        public String ExternalBankCode { get; set; }
-
-        [XmlElement(ElementName = "EXTREFNUM")]
-        public String ExternalReferenceNumber { get; set; }
-
-        [XmlElement(ElementName = "MSISDN2")]
-        public String CustomerMSISDN { get; set; }
-
-        [XmlElement(ElementName = "AMOUNT")]
-        public Int32 Amount { get; set; }
-
-        [XmlElement(ElementName = "LANGUAGE1")]
-        public String BankLanguage { get; set; }
-
-        [XmlElement(ElementName = "LANGUAGE2")]
-        public String CustomerLanguage { get; set; }
-
-        [XmlElement(ElementName = "SELECTOR")]
-        public String Selector { get; set; }
-    }
-
-
-    // NOTE: Generated code may require at least .NET Framework 4.5 or .NET Core/Standard 2.0.
-    /// <remarks/>
-    [System.SerializableAttribute()]
-    [System.ComponentModel.DesignerCategoryAttribute("code")]
-    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
-    [System.Xml.Serialization.XmlRootAttribute(Namespace = "", IsNullable = false, ElementName = "COMMAND")]
-    public partial class SafaricomResponse
-    {
-        [XmlElement(ElementName = "TYPE")]
-        public String TYPE { get; set; }
-
-        [XmlElement(ElementName = "TXNSTATUS")]
-        public Int32 TXNSTATUS { get; set; }
-
-        [XmlElement(ElementName = "DATE")]
-        public String DATE { get; set; }
-
-        [XmlElement(ElementName = "EXTREFNUM")]
-        public String EXTREFNUM { get; set; }
-
-        [XmlElement(ElementName = "TXNID")]
-        public string TXNID { get; set; }
-
-        [XmlElement(ElementName = "MESSAGE")]
-        public String MESSAGE { get; set; }
-    }
-
-
 }
