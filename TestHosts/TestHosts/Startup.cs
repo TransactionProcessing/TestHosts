@@ -9,9 +9,13 @@ namespace TestHosts
 {
     using System;
     using System.IO;
+    using Database.TestBank;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.OpenApi.Models;
+    using Shared.EntityFramework;
     using Shared.Extensions;
+    using Shared.General;
     using Shared.Logger;
     using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -34,6 +38,8 @@ namespace TestHosts
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            ConfigurationReader.Initialise(Startup.Configuration);
+
             services.AddControllers();
 
             // Register the Swagger generator, defining 1 or more Swagger documents
@@ -41,6 +47,10 @@ namespace TestHosts
                                    {
                                        c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                                    });
+            //services.AddDbContext<TestBankContext>();
+            var connString = ConfigurationReader.GetConnectionString("TestBankReadModel");
+            services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(connString));
+            services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(connectionString); });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -87,6 +97,21 @@ namespace TestHosts
                                  c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
                                  c.RoutePrefix = string.Empty;
                              });
+
+            // this will do the initial DB population
+            this.InitializeDatabase(app);
+        }
+
+        private void InitializeDatabase(IApplicationBuilder app)
+        {
+            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var testbankDbContext = serviceScope.ServiceProvider.GetRequiredService<TestBankContext>();
+                if (testbankDbContext.Database.IsRelational())
+                {
+                    testbankDbContext.Database.Migrate();
+                }
+            }
         }
     }
 }
