@@ -10,6 +10,7 @@
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json;
     using Shared.General;
+    using Deposit = Database.TestBank.Deposit;
 
     [Route("api/testbank")]
     [ApiController]
@@ -97,9 +98,21 @@
                 // Send to the call back Url (if specificed)
                 if (host.CallbackUri != null)
                 {
+                    // Convert the entity to a DTO
+                    DataTransferObjects.TestBank.Deposit depositDto = new DataTransferObjects.TestBank.Deposit()
+                                                                      {
+                                                                          Amount = makeDepositRequest.Amount,
+                                                                          AccountNumber = makeDepositRequest.ToAccountNumber,
+                                                                          SortCode = makeDepositRequest.ToSortCode,
+                                                                          DateTime = makeDepositRequest.DateTime,
+                                                                          Reference = makeDepositRequest.DepositReference,
+                                                                          DepositId = depositId,
+                                                                          HostIdentifier = host.HostIdentifier
+                                                                      };
+
                     HttpClient client = new HttpClient();
                     HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, host.CallbackUri);
-                    requestMessage.Content = new StringContent(JsonConvert.SerializeObject(deposit));
+                    requestMessage.Content = new StringContent(JsonConvert.SerializeObject(depositDto));
                     HttpResponseMessage response = await client.SendAsync(requestMessage, cancellationToken);
                     if (response.IsSuccessStatusCode)
                     {
