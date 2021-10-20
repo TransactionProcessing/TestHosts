@@ -109,6 +109,7 @@ namespace TestHosts
                 var testbankDbContext = serviceScope.ServiceProvider.GetRequiredService<TestBankContext>();
                 if (testbankDbContext.Database.IsRelational())
                 {
+                    testbankDbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
                     testbankDbContext.Database.Migrate();
                 }
             }
