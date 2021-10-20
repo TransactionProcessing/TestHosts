@@ -47,9 +47,17 @@ namespace TestHosts
                                    {
                                        c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                                    });
-            //services.AddDbContext<TestBankContext>();
-            var connString = ConfigurationReader.GetConnectionString("TestBankReadModel");
-            services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(connString));
+
+            if (Startup.WebHostEnvironment.IsEnvironment("IntegrationTest") || Startup.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true)
+            {
+                services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase("TestBankReadModel"));
+            }
+            else
+            {
+                var connString = ConfigurationReader.GetConnectionString("TestBankReadModel");
+                services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(connString));
+            }
+
             services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(connectionString); });
         }
 
