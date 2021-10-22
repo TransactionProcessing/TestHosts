@@ -13,6 +13,8 @@ namespace TestHosts
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
     using Microsoft.OpenApi.Models;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
     using Shared.EntityFramework;
     using Shared.Extensions;
     using Shared.General;
@@ -40,7 +42,14 @@ namespace TestHosts
         {
             ConfigurationReader.Initialise(Startup.Configuration);
 
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson(options =>
+                                                        {
+                                                            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                                                            options.SerializerSettings.TypeNameHandling = TypeNameHandling.None;
+                                                            options.SerializerSettings.Formatting = Formatting.Indented;
+                                                            options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+                                                            options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                                                        });
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
@@ -51,14 +60,17 @@ namespace TestHosts
             if (Startup.WebHostEnvironment.IsEnvironment("IntegrationTest") || Startup.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true)
             {
                 services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase("TestBankReadModel"));
+                DbContextOptionsBuilder<TestBankContext> builder = new DbContextOptionsBuilder<TestBankContext>();
+                builder = builder.UseInMemoryDatabase("TestBankReadModel");
+                
+                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(builder.Options);});
             }
             else
             {
                 var connString = ConfigurationReader.GetConnectionString("TestBankReadModel");
                 services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(connString));
+                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(connectionString); });
             }
-
-            services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(connectionString); });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
