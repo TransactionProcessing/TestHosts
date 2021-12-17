@@ -3,6 +3,7 @@
     using System;
     using System.Linq;
     using System.Net.Http;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Database.TestBank;
@@ -10,6 +11,7 @@
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json;
     using Shared.General;
+    using Shared.Logger;
     using Deposit = Database.TestBank.Deposit;
 
     [Route("api/testbank")]
@@ -72,15 +74,19 @@
         public async Task<IActionResult> MakeDeposit([FromBody] MakeDepositRequest makeDepositRequest,
                                                      CancellationToken cancellationToken)
         {
-            // TODO: Store the deposits
+            Logger.LogInformation(JsonConvert.SerializeObject(makeDepositRequest));
+
             String connectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
             TestBankContext context = this.ContextFactory(connectionString);
             HostConfiguration host = context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == makeDepositRequest.ToAccountNumber &&
                                                                                      h.SortCode == makeDepositRequest.ToSortCode);
             Guid depositId = Guid.Empty;
-            if (host != null)
+            if (host == null)
             {
-                depositId = Guid.NewGuid();
+                return this.NotFound($"No host found");
+            }
+
+            depositId = Guid.NewGuid();
                 Deposit deposit = new Deposit
                                   {
                                       Amount = makeDepositRequest.Amount,
@@ -112,7 +118,7 @@
 
                     HttpClient client = new HttpClient();
                     HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, host.CallbackUri);
-                    requestMessage.Content = new StringContent(JsonConvert.SerializeObject(depositDto));
+                    requestMessage.Content = new StringContent(JsonConvert.SerializeObject(depositDto), Encoding.UTF8, "application/json");
                     HttpResponseMessage response = await client.SendAsync(requestMessage, cancellationToken);
                     if (response.IsSuccessStatusCode)
                     {
@@ -120,8 +126,7 @@
                         await context.SaveChangesAsync(cancellationToken);
                     }
                 }
-            }
-
+            
             return this.Ok(new
                            {
                                host.HostIdentifier,
