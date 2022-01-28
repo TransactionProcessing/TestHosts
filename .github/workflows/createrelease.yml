@@ -28,14 +28,14 @@ jobs:
     - name: Publish Images to Docker Hub - Pre Release
       if: ${{ github.event.release.prerelease == true }} 
       run: |
-        docker build . --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:dev
+        docker build . --file TestHosts/Dockerfile --tag stuartferguson/testhosts:dev
         docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
         docker push stuartferguson/testhosts:dev
 
     - name: Publish Images to Docker Hub - Formal Release
       if: ${{ github.event.release.prerelease == false }} 
       run: |
-        docker build . --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:latest
+        docker build . --file TestHosts/Dockerfile --tag stuartferguson/testhosts:latest
         docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
         docker push stuartferguson/testhosts:latest
         
