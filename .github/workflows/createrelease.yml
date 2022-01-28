@@ -23,22 +23,28 @@ jobs:
       run: dotnet restore TestHosts/TestHosts.sln --source https://api.nuget.org/v3/index.json --source https://www.myget.org/F/transactionprocessing/api/v3/index.json
 
     - name: Build Code
-      run: dotnet build TestHosts/TestHosts.sln --configuration Release
-            
-    - name: Build Docker Images 
+      run: dotnet build TestHosts/TestHosts.sln --configuration Release         
+    
+    - name: Publish Images to Docker Hub - Pre Release
+      if: ${{ github.event.release.prerelease == true }} 
       run: |
-        docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:latest --tag stuartferguson/testhosts:${{ steps.get_version.outputs.VERSION }}       
-        
-    - name: Publish Images to Docker Hub
+        docker build . --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:dev
+        docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
+        docker push stuartferguson/testhosts:dev
+
+    - name: Publish Images to Docker Hub - Formal Release
+      if: ${{ github.event.release.prerelease == false }} 
       run: |
+        docker build . --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:latest
         docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
         docker push stuartferguson/testhosts:latest
-        docker push stuartferguson/testhosts:${{ steps.get_version.outputs.VERSION }}
         
     - name: Publish API
+      if: ${{ github.event.release.prerelease == false }}
       run: dotnet publish "TestHosts\TestHosts\TestHosts.csproj" --configuration Release --output publishOutput
 
     - name: Install Octopus CLI
+      if: ${{ github.event.release.prerelease == false }}
       run: |
         sudo apt update && sudo apt install --no-install-recommends gnupg curl ca-certificates apt-transport-https && \
         curl -sSfL https://apt.octopus.com/public.key | sudo apt-key add - && \
@@ -46,6 +52,7 @@ jobs:
         sudo apt update && sudo apt install octopuscli
 
     - name: Pack Files for Octopus
+      if: ${{ github.event.release.prerelease == false }}
       run: >-
         octo pack
         --outFolder /home/runner/work/TestHosts/TestHosts
@@ -57,6 +64,7 @@ jobs:
         --logLevel=verbose
     
     - name: Push Package to Octopus
+      if: ${{ github.event.release.prerelease == false }}
       run: >-
         octo push
         --server ${{ secrets.OCTOPUS_URL }}
@@ -65,6 +73,7 @@ jobs:
         --overwrite-mode IgnoreIfExists
     
     - name: Get Release
+      if: ${{ github.event.release.prerelease == false }}
       id: getrelease
       uses: octokit/request-action@v2.0.17
       with:
@@ -73,6 +82,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Release Notes
+      if: ${{ github.event.release.prerelease == false }}
       id: buildreleasenotes
       uses: gr2m/get-json-paths-action@v1.x
       with:
@@ -80,6 +90,7 @@ jobs:
           releasenote: "body"
     
     - name: Create & Deploy Release in Octopus
+      if: ${{ github.event.release.prerelease == false }}
       run: >-
         octo create-release
         --server ${{ secrets.OCTOPUS_URL }}

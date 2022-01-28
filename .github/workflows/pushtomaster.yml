@@ -1,0 +1,32 @@
+name: Publish Pre-Release Docker 
+
+on:
+  push:
+    # branches to consider in the event; optional, defaults to all
+    branches:
+      - master
+
+jobs:
+  build:
+    name: "Publish Pre-Release Docker"
+    env:
+        ASPNETCORE_ENVIRONMENT: "Production"
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+      with:
+        fetch-depth: 0
+
+    - name: Restore Nuget Packages
+      run: dotnet restore TestHosts/TestHosts.sln --source https://api.nuget.org/v3/index.json --source https://www.myget.org/F/transactionprocessing/api/v3/index.json
+
+    - name: Build Code
+      run: dotnet build TestHosts/TestHosts.sln --configuration Release
+    
+    - name: Publish Images to Docker Hub
+      run: |
+        docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag stuartferguson/testhosts:master
+        docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
+        docker push stuartferguson/testhosts:master
