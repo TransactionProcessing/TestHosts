@@ -34,6 +34,10 @@ namespace TestHosts
                                                      webBuilder.UseStartup<Startup>();
                                                      webBuilder.UseConfiguration(config);
                                                      webBuilder.UseKestrel();
+                                                     webBuilder.ConfigureKestrel((context,
+                                                                                  options) => {
+                                                                                     options.AllowSynchronousIO = true;
+                                                                                 });
                                                  });
             return hostBuilder;
         }
