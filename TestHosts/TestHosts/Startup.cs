@@ -9,6 +9,11 @@ namespace TestHosts
 {
     using System;
     using System.IO;
+    using System.ServiceModel;
+    using CoreWCF;
+    using CoreWCF.Configuration;
+    using CoreWCF.Description;
+    using Database.PataPawa;
     using Database.TestBank;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
@@ -19,6 +24,7 @@ namespace TestHosts
     using Shared.Extensions;
     using Shared.General;
     using Shared.Logger;
+    using TestHosts.SoapServices;
     using ILogger = Microsoft.Extensions.Logging.ILogger;
 
     public class Startup
@@ -52,27 +58,40 @@ namespace TestHosts
                                                         });
 
             // Register the Swagger generator, defining 1 or more Swagger documents
-            services.AddSwaggerGen(c =>
-                                   {
-                                       c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-                                   });
+            //services.AddSwaggerGen(c =>
+            //                       {
+            //                           c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+            //                       });
 
             if (Startup.WebHostEnvironment.IsEnvironment("IntegrationTest") || Startup.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true)
             {
                 services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase("TestBankReadModel"));
-                DbContextOptionsBuilder<TestBankContext> builder = new DbContextOptionsBuilder<TestBankContext>();
-                builder = builder.UseInMemoryDatabase("TestBankReadModel");
-                
-                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(builder.Options);});
+                DbContextOptionsBuilder<TestBankContext> bankContextBuilder = new DbContextOptionsBuilder<TestBankContext>();
+                bankContextBuilder = bankContextBuilder.UseInMemoryDatabase("TestBankReadModel");
+                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(bankContextBuilder.Options); });
+
+                services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase("PataPawaReadModel"));
+                DbContextOptionsBuilder<PataPawaContext> pataPawaBuilder = new DbContextOptionsBuilder<PataPawaContext>();
+                pataPawaBuilder = pataPawaBuilder.UseInMemoryDatabase("PataPawaReadModel");
+                services.AddSingleton<Func<String, PataPawaContext>>(cont => (connectionString) => { return new PataPawaContext(pataPawaBuilder.Options); });
             }
             else
             {
-                var connString = ConfigurationReader.GetConnectionString("TestBankReadModel");
-                services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(connString));
-                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(connectionString); });
+                String testBankConnectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
+                services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(testBankConnectionString));
+                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(testBankConnectionString); });
+                
+                String pataPawaConnectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
+                services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
+                services.AddSingleton<Func<String, PataPawaContext>>(cont => (connectionString) => { return new PataPawaContext(pataPawaConnectionString); });
             }
-        }
 
+            services.AddSingleton<PataPawaPostPayService>();
+            services.AddMvc();
+
+            services.AddServiceModelServices().AddServiceModelMetadata();
+            services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
+        }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
@@ -96,41 +115,66 @@ namespace TestHosts
                 app.UseDeveloperExceptionPage();
             }
 
-            app.AddRequestLogging();
-            app.AddResponseLogging();
-            app.AddExceptionHandler();
+            //app.AddRequestLogging();
+            //app.AddResponseLogging();
+            //app.AddExceptionHandler();
 
             app.UseRouting();
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
-
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
+            //app.UseSwagger();
 
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
-            // specifying the Swagger JSON endpoint.
-            app.UseSwaggerUI(c =>
-                             {
-                                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-                                 c.RoutePrefix = string.Empty;
-                             });
+            //// Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
+            //// specifying the Swagger JSON endpoint.
+            //app.UseSwaggerUI(c =>
+            //                 {
+            //                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+            //                     c.RoutePrefix = string.Empty;
+            //                 });
 
             // this will do the initial DB population
             this.InitializeDatabase(app);
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+            });
+
+            // Configure an explicit none credential type for WSHttpBinding as it defaults to Windows which requires extra configuration in ASP.NET
+            var myWSHttpBinding = new WSHttpBinding(SecurityMode.Transport);
+            myWSHttpBinding.Security.Transport.ClientCredentialType = HttpClientCredentialType.None;
+
+            app.UseServiceModel(builder => {
+                                    builder.AddService<PataPawaPostPayService>((serviceOptions) => {
+                                                                                  serviceOptions.DebugBehavior.IncludeExceptionDetailInFaults = true;
+                                                                              })
+                                           // Add a BasicHttpBinding at a specific endpoint
+                                           .AddServiceEndpoint<PataPawaPostPayService, IPataPawaPostPayService>(new BasicHttpBinding(), "/PataPawaPostPayService/basichttp");
+                                    // Add a WSHttpBinding with Transport Security for TLS
+                                    //.AddServiceEndpoint<PataPawaPrePayService, IPataPawaPrePayService>(myWSHttpBinding, "/EchoService/WSHttps");
+                                });
+
+            var serviceMetadataBehavior = app.ApplicationServices.GetRequiredService<CoreWCF.Description.ServiceMetadataBehavior>();
+            serviceMetadataBehavior.HttpGetEnabled = true;
+
+            
+
         }
 
         private void InitializeDatabase(IApplicationBuilder app)
         {
-            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            using (IServiceScope serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
-                var testbankDbContext = serviceScope.ServiceProvider.GetRequiredService<TestBankContext>();
+                TestBankContext testbankDbContext = serviceScope.ServiceProvider.GetRequiredService<TestBankContext>();
                 if (testbankDbContext.Database.IsRelational())
                 {
                     testbankDbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
                     testbankDbContext.Database.Migrate();
+                }
+
+                PataPawaContext pataPawaContext = serviceScope.ServiceProvider.GetRequiredService<PataPawaContext>();
+                if (pataPawaContext.Database.IsRelational())
+                {
+                    pataPawaContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
+                    pataPawaContext.Database.Migrate();
                 }
             }
         }
