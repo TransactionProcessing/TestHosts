@@ -138,21 +138,15 @@ namespace TestHosts
                 endpoints.MapControllers();
             });
 
-            // Configure an explicit none credential type for WSHttpBinding as it defaults to Windows which requires extra configuration in ASP.NET
-            var myWSHttpBinding = new WSHttpBinding(SecurityMode.Transport);
-            myWSHttpBinding.Security.Transport.ClientCredentialType = HttpClientCredentialType.None;
-
             app.UseServiceModel(builder => {
                                     builder.AddService<PataPawaPostPayService>((serviceOptions) => {
                                                                                   serviceOptions.DebugBehavior.IncludeExceptionDetailInFaults = true;
                                                                               })
                                            // Add a BasicHttpBinding at a specific endpoint
                                            .AddServiceEndpoint<PataPawaPostPayService, IPataPawaPostPayService>(new BasicHttpBinding(), "/PataPawaPostPayService/basichttp");
-                                    // Add a WSHttpBinding with Transport Security for TLS
-                                    //.AddServiceEndpoint<PataPawaPrePayService, IPataPawaPrePayService>(myWSHttpBinding, "/EchoService/WSHttps");
-                                });
+                                    });
 
-            var serviceMetadataBehavior = app.ApplicationServices.GetRequiredService<CoreWCF.Description.ServiceMetadataBehavior>();
+            ServiceMetadataBehavior serviceMetadataBehavior = app.ApplicationServices.GetRequiredService<CoreWCF.Description.ServiceMetadataBehavior>();
             serviceMetadataBehavior.HttpGetEnabled = true;
 
             
