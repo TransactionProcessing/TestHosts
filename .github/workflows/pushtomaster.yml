@@ -45,6 +45,6 @@ jobs:
 
     - name: Publish Windows Images to Docker Hub
       run: |
-        docker build . --file TestHosts/TestHosts//Dockerfilewindows --tag stuartferguson/testhostswindows:master
+        docker build ./TestHosts --file TestHosts/Dockerfilewindows --tag stuartferguson/testhostswindows:master
         docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
         docker push stuartferguson/testhostswindows:master
