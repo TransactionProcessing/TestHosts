@@ -1,0 +1,21 @@
+FROM stuartferguson/txnprocbasewindows AS base
+USER ContainerAdministrator
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0-windowsservercore-ltsc2019 AS build
+WORKDIR /src
+COPY ["TestHosts/TestHosts.csproj", "TestHosts/"]
+COPY ["TestHosts/NuGet.Config", "TestHosts/"]
+RUN dotnet restore "TestHosts/TestHosts.csproj"
+COPY . .
+WORKDIR "/src/TestHosts"
+RUN dotnet build "TestHosts.csproj" -c Release -o /app/build
+
+WORKDIR "/src/TestHosts"
+FROM build AS publish
+RUN dotnet publish "TestHosts.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "TestHosts.dll"]
