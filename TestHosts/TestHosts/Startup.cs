@@ -15,7 +15,10 @@ namespace TestHosts
     using CoreWCF.Description;
     using Database.PataPawa;
     using Database.TestBank;
+    using HealthChecks.UI.Client;
+    using Microsoft.AspNetCore.Diagnostics.HealthChecks;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Diagnostics.HealthChecks;
     using Microsoft.Extensions.Logging;
     using Microsoft.OpenApi.Models;
     using Newtonsoft.Json;
@@ -32,8 +35,11 @@ namespace TestHosts
         public Startup(IWebHostEnvironment webHostEnvironment)
         {
             IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(webHostEnvironment.ContentRootPath)
+                                                                      .AddJsonFile("/home/txnproc/config/appsettings.json", true, true)
+                                                                      .AddJsonFile($"/home/txnproc/config/appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true)
                                                                       .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                                                                      .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true).AddEnvironmentVariables();
+                                                                      .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                                                                      .AddEnvironmentVariables();
 
             Startup.Configuration = builder.Build();
             Startup.WebHostEnvironment = webHostEnvironment;
@@ -47,6 +53,12 @@ namespace TestHosts
         public void ConfigureServices(IServiceCollection services)
         {
             ConfigurationReader.Initialise(Startup.Configuration);
+
+            services.AddHealthChecks().AddSqlServer(connectionString: ConfigurationReader.GetConnectionString("HealthCheck"),
+                                                    healthQuery: "SELECT 1;",
+                                                    name: "Read Model Server",
+                                                    failureStatus: HealthStatus.Degraded,
+                                                    tags: new[] { "db", "sql", "sqlserver" });
 
             services.AddControllers().AddNewtonsoftJson(options =>
                                                         {
@@ -136,6 +148,16 @@ namespace TestHosts
             this.InitializeDatabase(app);
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks("health", new HealthCheckOptions()
+                                                    {
+                                                        Predicate = _ => true,
+                                                        ResponseWriter = Shared.HealthChecks.HealthCheckMiddleware.WriteResponse
+                                                    });
+                endpoints.MapHealthChecks("healthui", new HealthCheckOptions()
+                                                      {
+                                                          Predicate = _ => true,
+                                                          ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                                                      });
             });
 
             app.UseServiceModel(builder => {
