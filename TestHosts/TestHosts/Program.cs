@@ -20,8 +20,6 @@ namespace TestHosts
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
-            Console.Title = "Test Hosts";
-
             //At this stage, we only need our hosting file for ip and ports
             IConfigurationRoot config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
                                                                   .AddJsonFile("hosting.json", optional: true)
@@ -29,6 +27,7 @@ namespace TestHosts
                                                                   .AddEnvironmentVariables().Build();
 
             IHostBuilder hostBuilder = Host.CreateDefaultBuilder(args);
+            hostBuilder.UseWindowsService();
             hostBuilder.ConfigureWebHostDefaults(webBuilder =>
                                                  {
                                                      webBuilder.UseStartup<Startup>();
