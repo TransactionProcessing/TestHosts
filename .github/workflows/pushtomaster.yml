@@ -20,7 +20,7 @@ jobs:
         fetch-depth: 0
 
     - name: Restore Nuget Packages
-      run: dotnet restore TestHosts/TestHosts.sln --source https://api.nuget.org/v3/index.json --source https://www.myget.org/F/transactionprocessing/api/v3/index.json
+      run: dotnet restore TestHosts/TestHosts.sln --source ${{ secrets.PUBLICFEEDURL }} --source ${{ secrets.PRIVATEFEED_URL }}
 
     - name: Build Code
       run: dotnet build TestHosts/TestHosts.sln --configuration Release
