@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestHosts.Database.PataPawa;
 
@@ -11,9 +12,11 @@ using TestHosts.Database.PataPawa;
 namespace TestHosts.Migrations.PataPawa
 {
     [DbContext(typeof(PataPawaContext))]
-    partial class PataPawaContextModelSnapshot : ModelSnapshot
+    [Migration("20240205104654_storeprepaytransactions")]
+    partial class storeprepaytransactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -123,9 +126,6 @@ namespace TestHosts.Migrations.PataPawa
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsPending")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Messaage")
                         .HasColumnType("nvarchar(max)");

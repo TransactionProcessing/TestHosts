@@ -29,6 +29,11 @@ namespace TestHosts.Database.PataPawa
         public DbSet<PostPaidAccount> PostPaidAccounts { get; set; }
 
         public DbSet<PostPaidBill> PostPaidBills { get; set; }
+        public DbSet<PrePayUser> PrePayUsers{ get; set; }
+
+        public DbSet<PrePayMeter> PrePayMeters { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<TransactionCharge> TransactionCharges { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -44,6 +49,13 @@ namespace TestHosts.Database.PataPawa
             modelBuilder.Entity<PostPaidAccount>().HasKey(p => p.AccountId);
 
             modelBuilder.Entity<PostPaidBill>().HasKey(p => p.PostPaidBillId);
+
+            modelBuilder.Entity<PrePayUser>().HasKey(p => p.UserId);
+            modelBuilder.Entity<PrePayMeter>().HasKey(p => p.MeterNumber);
+            modelBuilder.Entity<Transaction>().HasKey(p => p.TransactionId);
+            modelBuilder.Entity<Transaction>().Property(e => e.TransactionId).ValueGeneratedOnAdd();
+            modelBuilder.Entity<TransactionCharge>().HasKey(p => p.TransactionChargeId);
+            modelBuilder.Entity<TransactionCharge>().Property(e => e.TransactionChargeId).ValueGeneratedOnAdd();
 
             base.OnModelCreating(modelBuilder);
         }

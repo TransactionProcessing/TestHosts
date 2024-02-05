@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 namespace TestHosts
 {
     using System.IO;
+    using Database.PataPawa;
+    using Microsoft.Extensions.DependencyInjection;
 
     public class Program
     {
@@ -40,6 +42,18 @@ namespace TestHosts
                                                                                      options.AllowSynchronousIO = true;
                                                                                  });
                                                  });
+            hostBuilder.ConfigureServices(services =>
+                                          {
+                                              services.AddHostedService<PendingPrePaymentProcessor>(provider =>
+                                                                                              {
+                                                                                                  Func<String, PataPawaContext> contextResolver = provider.GetRequiredService<Func<String, PataPawaContext>>();
+                                                                                                  PendingPrePaymentProcessor worker =
+                                                                                                      new PendingPrePaymentProcessor(contextResolver);
+                                                                                                  //worker.TraceGenerated += Worker_TraceGenerated;
+                                                                                                  return worker;
+                                                                                              });
+                                          });
+
             return hostBuilder;
         }
     }
