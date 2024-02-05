@@ -8,11 +8,20 @@ using NLog.Extensions.Logging;
 namespace TestHosts
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Diagnostics.Metrics;
+    using System.DirectoryServices.Protocols;
     using System.IO;
+    using System.Linq;
+    using System.Runtime.InteropServices;
     using System.ServiceModel;
+    using System.Threading;
+    using System.Threading.Tasks;
     using CoreWCF;
     using CoreWCF.Configuration;
     using CoreWCF.Description;
+    using CoreWCF.IdentityModel.Protocols.WSTrust;
     using Database.PataPawa;
     using Database.TestBank;
     using HealthChecks.UI.Client;
@@ -192,6 +201,70 @@ namespace TestHosts
                     pataPawaContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
                     pataPawaContext.Database.Migrate();
                 }
+            }
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    public class PendingPrePaymentProcessor : BackgroundService{
+        private readonly Func<String, PataPawaContext> ContextResolver;
+
+        public PendingPrePaymentProcessor(Func<String, PataPawaContext> contextResolver){
+            this.ContextResolver = contextResolver;
+        }
+
+        private PataPawaContext GetPataPawaContext()
+        {
+            String connectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
+            PataPawaContext context = this.ContextResolver(connectionString);
+            return context;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken){
+            while (stoppingToken.IsCancellationRequested == false){
+                // TODO: may introduce a date filter
+                PataPawaContext context = this.GetPataPawaContext();
+
+                var pendingTransactions = await context.Transactions.Where(t => t.IsPending).OrderBy(t => t.Date).ToListAsync(stoppingToken);
+
+                if (pendingTransactions.Any()){
+                    // Process the pending transactions
+                    foreach (Transaction pendingTransaction in pendingTransactions){
+
+                        PrePayMeter meter = await context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
+
+                        pendingTransaction.Status = 0;
+                        pendingTransaction.Messaage = "success";
+                        pendingTransaction.Vendor = "support";
+                        pendingTransaction.MeterNumber = meter.MeterNumber;
+                        pendingTransaction.ResultCode = "elec000";
+                        pendingTransaction.StandardTokenAmt = 64;
+                        pendingTransaction.StandardTokenTax = 0;
+                        pendingTransaction.Units = 6.1m;
+                        pendingTransaction.Token = Guid.NewGuid().ToString("N");
+                        pendingTransaction.StandardTokenRctNum = "Ce001OVS3709952";
+                        pendingTransaction.Date = DateTime.Now;
+                        pendingTransaction.TotalAmount = 400;
+                        pendingTransaction.Charges = new List<TransactionCharge>{
+                                                                                    new TransactionCharge{
+                                                                                                             ERCCharge = 3.19m,
+                                                                                                             ForexCharge = 0.47m,
+                                                                                                             FuelIndexCharge = 2.47m,
+                                                                                                             InflationAdjustment = 0,
+                                                                                                             MonthlyFC = 13.27m,
+                                                                                                             REPCharge = 1.39m,
+                                                                                                             TotalTax = 15.21m
+                                                                                                         }
+                                                                                };
+                        pendingTransaction.CustomerName = meter.CustomerName;
+                        pendingTransaction.Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff");
+                        pendingTransaction.IsPending = false;
+
+                        await context.SaveChangesAsync(stoppingToken);
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromMinutes(1),stoppingToken);
             }
         }
     }
