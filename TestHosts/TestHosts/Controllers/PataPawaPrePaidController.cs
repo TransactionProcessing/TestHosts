@@ -1,7 +1,6 @@
 ﻿namespace TestHosts.Controllers{
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.Metrics;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -42,67 +41,12 @@
                 RequestType.meter => await this.HandleMeterRequest(this.Request.Form, cancellationToken),
                 RequestType.vend => await this.HandleVendRequest(this.Request.Form, cancellationToken),
                 RequestType.balance => await this.HandleBalanceRequest(this.Request.Form, cancellationToken),
-                RequestType.lastvendfull => await HandlelastVendRequest(xlatedRequestType, Request.Form, cancellationToken),
-                RequestType.lastvendfullfail => await HandlelastVendRequest(xlatedRequestType, Request.Form, cancellationToken),
-                // TODO: last vend and last vend full 
+                RequestType.lastvendfull => await HandleLastVendRequest(xlatedRequestType, this.Request.Form, cancellationToken),
+                RequestType.lastvendfullfail => await HandleLastVendRequest(xlatedRequestType, this.Request.Form, cancellationToken),
                 _ => this.BadRequest($"Request type {request} not supported.")
             };
 
             return response;
-        }
-
-        private async Task<IActionResult> HandlelastVendRequest(RequestType xlatedRequestType, IFormCollection requestForm, CancellationToken cancellationToken){
-
-            String username = requestForm["username"].ToString();
-            String key = requestForm["key"].ToString();
-            String meter = requestForm["meter"].ToString();
-
-            (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
-            if (meterValidation.result != null)
-                return meterValidation.result;
-
-            PataPawaContext context = this.GetPataPawaContext();
-            Database.PataPawa.Transaction transaction = xlatedRequestType switch{
-                RequestType.lastvendfull => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 0).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken),
-                _ => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 0).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken)
-            };
-
-            if (transaction == null)
-            {
-                var response = new
-                               {
-                                   status = 0,
-                                   msg = "Record not found"
-                               };
-                return this.Ok(response);
-            }
-            else
-            {
-                var response = new
-                               {
-                                   status = transaction.Status,
-                                   msg = transaction.Messaage,
-                                   transaction = new Transaction
-                                                 {
-                                                     transactionId = transaction.TransactionId,
-                                                     status = transaction.Status,
-                                                     vendor = transaction.Vendor,
-                                                     meterNo = transaction.MeterNumber,
-                                                     rescode = transaction.ResultCode,
-                                                     stdTokenAmt = transaction.StandardTokenAmt,
-                                                     stdTokenTax = transaction.StandardTokenTax.ToString(),
-                                                     units = transaction.Units.ToString(),
-                                                     token = transaction.Token,
-                                                     stdTokenRctNum = transaction.StandardTokenRctNum,
-                                                     date = transaction.Date.ToString("yyyy-MM-dd hh:mm:ss"),
-                                                     totalAmount = transaction.TotalAmount.ToString(),
-                                                     customerName = transaction.CustomerName,
-                                                     reference = transaction.Reference,
-                                                     Charges = new List<Fixed>()
-                                                 }
-                               };
-                return this.Ok(response);
-            }
         }
 
         private Database.PataPawa.Transaction CreateTransactionRecord(String amount, PrePayMeter meter){
@@ -113,7 +57,7 @@
                                                             Messaage = "transaction still pending",
                                                             IsPending = true,
                                                             MeterNumber = meter.MeterNumber
-                };
+                                                        };
             }
 
             Database.PataPawa.Transaction CreateTimeBasedFailedTransaction(){
@@ -122,7 +66,7 @@
                                                             Status = 2,
                                                             Messaage = "MTRFE013-M1: There is an insufficient amount (676.77) for the time based \\r\\ncharges (3132). Either tender more money or request less units.",
                                                             IsPending = false
-                };
+                                                        };
             }
 
             Database.PataPawa.Transaction CreateInsufficientFloatFailedTransaction(){
@@ -131,7 +75,7 @@
                                                             Status = 2,
                                                             Messaage = "MTRFE013-M1: There is an insufficient amount (676.77) for the time based \\r\\ncharges (3132). Either tender more money or request less units.",
                                                             IsPending = false
-                };
+                                                        };
             }
 
             Database.PataPawa.Transaction CreateTooSoonFailedTransaction(){
@@ -140,7 +84,7 @@
                                                             Status = 1,
                                                             Messaage = "This transaction has been done too soon from the last one. Please wait for a \\r\\nfew minutes.",
                                                             IsPending = false
-                };
+                                                        };
             }
 
             Database.PataPawa.Transaction CreateSuccessfulTransaction(){
@@ -156,7 +100,7 @@
                                                             Token = Guid.NewGuid().ToString("N"),
                                                             StandardTokenRctNum = "Ce001OVS3709952",
                                                             Date = DateTime.Now,
-                    TotalAmount = 400,
+                                                            TotalAmount = 400,
                                                             Charges = new List<TransactionCharge>{
                                                                                                      new TransactionCharge{
                                                                                                                               ERCCharge = 3.19m,
@@ -171,7 +115,7 @@
                                                             CustomerName = meter.CustomerName,
                                                             Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff"),
                                                             IsPending = false
-                };
+                                                        };
             }
 
             Database.PataPawa.Transaction transaction = amount switch{
@@ -183,6 +127,46 @@
             };
 
             return transaction;
+        }
+
+        private VendResponse CreateVendResponse(Database.PataPawa.Transaction transaction){
+            VendResponse response = new VendResponse{
+                                                        status = transaction.Status,
+                                                        msg = transaction.Messaage,
+                                                        transaction = new Transaction{
+                                                                                         transactionId = transaction.TransactionId,
+                                                                                         status = transaction.Status,
+                                                                                         vendor = transaction.Vendor,
+                                                                                         meterNo = transaction.MeterNumber,
+                                                                                         rescode = transaction.ResultCode,
+                                                                                         stdTokenAmt = transaction.StandardTokenAmt,
+                                                                                         stdTokenTax = transaction.StandardTokenTax.ToString(),
+                                                                                         units = transaction.Units.ToString(),
+                                                                                         token = transaction.Token,
+                                                                                         stdTokenRctNum = transaction.StandardTokenRctNum,
+                                                                                         date = transaction.Date.ToString("yyyy-MM-dd hh:mm:ss"),
+                                                                                         totalAmount = transaction.TotalAmount.ToString(),
+                                                                                         customerName = transaction.CustomerName,
+                                                                                         reference = transaction.Reference,
+                                                                                         Charges = new List<Fixed>()
+                                                                                     }
+                                                    };
+
+            if (transaction.Charges != null){
+                foreach (TransactionCharge transactionCharge in transaction.Charges){
+                    response.transaction.Charges.Add(new Fixed{
+                                                                  ForexCharge = transactionCharge.ForexCharge,
+                                                                  ERCCharge = transactionCharge.ERCCharge,
+                                                                  FuelIndexCharge = transactionCharge.FuelIndexCharge,
+                                                                  InflationAdjustment = transactionCharge.InflationAdjustment,
+                                                                  MonthlyFC = transactionCharge.MonthlyFC,
+                                                                  REPCharge = transactionCharge.REPCharge,
+                                                                  TotalTax = transactionCharge.TotalTax,
+                                                              });
+                }
+            }
+
+            return response;
         }
 
         private PataPawaContext GetPataPawaContext(){
@@ -200,12 +184,40 @@
 
             PrePayUser user = await context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Key == key, cancellationToken);
 
-            var response = new{
-                                  status = 0,
-                                  msg = "success",
-                                  balance = user.Balance.ToString(),
-                              };
+            var response = new BalanceResponse{
+                                                  status = 0,
+                                                  msg = "success",
+                                                  balance = user.Balance.ToString(),
+                                              };
             return this.Ok(response);
+        }
+
+        private async Task<IActionResult> HandleLastVendRequest(RequestType xlatedRequestType, IFormCollection requestForm, CancellationToken cancellationToken){
+            String username = requestForm["username"].ToString();
+            String key = requestForm["key"].ToString();
+            String meter = requestForm["meter"].ToString();
+
+            (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
+            if (meterValidation.result != null)
+                return meterValidation.result;
+
+            PataPawaContext context = this.GetPataPawaContext();
+            Database.PataPawa.Transaction transaction = xlatedRequestType switch{
+                RequestType.lastvendfull => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 0).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken),
+                _ => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 0).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken)
+            };
+
+            if (transaction == null){
+                VendResponse response = new VendResponse{
+                                                            status = 0,
+                                                            msg = "Record not found"
+                                                        };
+                return this.Ok(response);
+            }
+            else{
+                VendResponse response = this.CreateVendResponse(transaction);
+                return this.Ok(response);
+            }
         }
 
         private async Task<IActionResult> HandleLoginRequest(IFormCollection requestForm, CancellationToken cancellationToken){
@@ -217,19 +229,19 @@
             PrePayUser user = await context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Password == password, cancellationToken);
 
             if (user == default){
-                var errorReponse = new{
-                                          status = 1,
-                                          msg = "Wrong Username or Password"
-                                      };
-                return this.Ok(errorReponse);
+                LoginResponse errorResponse = new LoginResponse{
+                                                                   status = 1,
+                                                                   msg = "Wrong Username or Password"
+                                                               };
+                return this.Ok(errorResponse);
             }
 
-            var response = new{
-                                  status = 0,
-                                  msg = "success",
-                                  balance = user.Balance,
-                                  key = user.Key,
-                              };
+            LoginResponse response = new LoginResponse{
+                                                          status = 0,
+                                                          msg = "success",
+                                                          balance = user.Balance.ToString(),
+                                                          key = user.Key,
+                                                      };
             return this.Ok(response);
         }
 
@@ -242,11 +254,11 @@
             if (meterValidation.result != null)
                 return meterValidation.result;
 
-            var response = new{
-                                  status = 0,
-                                  msg = "success",
-                                  customerName = meterValidation.meterDetails.CustomerName
-                              };
+            MeterResponse response = new MeterResponse{
+                                                          status = 0,
+                                                          msg = "success",
+                                                          customerName = meterValidation.meterDetails.CustomerName
+                                                      };
             return this.Ok(response);
         }
 
@@ -273,41 +285,7 @@
             await context.SaveChangesAsync(cancellationToken);
 
             // Now build the response object
-            var response = new{
-                                  status = transaction.Status,
-                                  msg = transaction.Messaage,
-                                  transaction = new Transaction{
-                                                                   transactionId = transaction.TransactionId,
-                                                                   status = transaction.Status,
-                                                                   vendor = transaction.Vendor,
-                                                                   meterNo = transaction.MeterNumber,
-                                                                   rescode = transaction.ResultCode,
-                                                                   stdTokenAmt = transaction.StandardTokenAmt,
-                                                                   stdTokenTax = transaction.StandardTokenTax.ToString(),
-                                                                   units = transaction.Units.ToString(),
-                                                                   token = transaction.Token,
-                                                                   stdTokenRctNum = transaction.StandardTokenRctNum,
-                                                                   date = transaction.Date.ToString("yyyy-MM-dd hh:mm:ss"),
-                                                                   totalAmount = transaction.TotalAmount.ToString(),
-                                                                   customerName = transaction.CustomerName,
-                                                                   reference = transaction.Reference,
-                                                                   Charges = new List<Fixed>()
-                                                               }
-                              };
-
-            if (transaction.Charges != null){
-                foreach (TransactionCharge transactionCharge in transaction.Charges){
-                    response.transaction.Charges.Add(new Fixed{
-                                                                  ForexCharge = transactionCharge.ForexCharge,
-                                                                  ERCCharge = transactionCharge.ERCCharge,
-                                                                  FuelIndexCharge = transactionCharge.FuelIndexCharge,
-                                                                  InflationAdjustment = transactionCharge.InflationAdjustment,
-                                                                  MonthlyFC = transactionCharge.MonthlyFC,
-                                                                  REPCharge = transactionCharge.REPCharge,
-                                                                  TotalTax = transactionCharge.TotalTax,
-                                                              });
-                }
-            }
+            VendResponse response = this.CreateVendResponse(transaction);
 
             return this.Ok(response);
         }
@@ -328,19 +306,19 @@
 
         private async Task<(PrePayMeter meterDetails, IActionResult result)> ValidateMeterDetails(String meterNumber, CancellationToken cancellationToken){
             if (meterNumber == "01234567890"){
-                return (null, this.Ok(new{
-                                             status = 1,
-                                             msg = "Request timed out. please fetch the response again",
-                                             code = "elec100"
-                                         }));
+                return (null, this.Ok(new MeterResponse{
+                                                           status = 1,
+                                                           msg = "Request timed out. please fetch the response again",
+                                                           code = "elec100"
+                                                       }));
             }
 
             if (meterNumber == "01234567891"){
-                return (null, this.Ok(new{
-                                             status = 1,
-                                             msg = "Kenya Power link down, repeat the transaction after sometime",
-                                             code = "elec100"
-                                         }));
+                return (null, this.Ok(new MeterResponse{
+                                                           status = 1,
+                                                           msg = "Kenya Power link down, repeat the transaction after sometime",
+                                                           code = "elec100"
+                                                       }));
             }
 
             PataPawaContext context = this.GetPataPawaContext();
@@ -348,10 +326,10 @@
             PrePayMeter meterDetails = await context.PrePayMeters.SingleOrDefaultAsync(m => m.MeterNumber == meterNumber, cancellationToken);
 
             if (meterDetails == default){
-                var errorReponse = new{
-                                          status = 1,
-                                          msg = "Meter number not found"
-                                      };
+                MeterResponse errorReponse = new MeterResponse{
+                                                                  status = 1,
+                                                                  msg = "Meter number not found"
+                                                              };
                 return (null, this.Ok(errorReponse));
             }
 
@@ -370,7 +348,7 @@
             meter,
 
             vend,
-            
+
             balance,
 
             lastvendfull,
@@ -391,6 +369,14 @@
         public Decimal MonthlyFC{ get; set; }
         public Decimal REPCharge{ get; set; }
         public Decimal TotalTax{ get; set; }
+
+        #endregion
+    }
+
+    public class VendResponse : BaseResponse{
+        #region Properties
+
+        public Transaction transaction{ get; set; }
 
         #endregion
     }
@@ -416,6 +402,41 @@
         public Int32 transactionId{ get; set; }
         public String units{ get; set; }
         public String vendor{ get; set; }
+
+        #endregion
+    }
+
+    public class BalanceResponse : BaseResponse{
+        #region Properties
+
+        public String balance{ get; set; }
+
+        #endregion
+    }
+
+    public class LoginResponse : BaseResponse{
+        #region Properties
+
+        public String balance{ get; set; }
+        public String key{ get; set; }
+
+        #endregion
+    }
+
+    public class BaseResponse{
+        #region Properties
+
+        public String msg{ get; set; }
+        public Int32 status{ get; set; }
+
+        #endregion
+    }
+
+    public class MeterResponse : BaseResponse{
+        #region Properties
+
+        public String code{ get; set; }
+        public String customerName{ get; set; }
 
         #endregion
     }
