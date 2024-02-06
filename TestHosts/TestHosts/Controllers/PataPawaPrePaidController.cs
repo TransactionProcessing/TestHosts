@@ -204,7 +204,7 @@
             PataPawaContext context = this.GetPataPawaContext();
             Database.PataPawa.Transaction transaction = xlatedRequestType switch{
                 RequestType.lastvendfull => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 0).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken),
-                _ => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 0).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken)
+                _ => await context.Transactions.Where(t => t.MeterNumber == meter && t.Status == 1).OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken)
             };
 
             if (transaction == null){
