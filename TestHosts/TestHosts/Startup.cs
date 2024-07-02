@@ -36,6 +36,7 @@ namespace TestHosts
     using Shared.Extensions;
     using Shared.General;
     using Shared.Logger;
+    using Shared.Middleware;
     using TestHosts.SoapServices;
     using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -112,6 +113,16 @@ namespace TestHosts
 
             services.AddServiceModelServices().AddServiceModelMetadata();
             services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
+
+
+            bool logRequests = ConfigurationReaderExtensions.GetValueOrDefault<Boolean>("MiddlewareLogging", "LogRequests", true);
+            bool logResponses = ConfigurationReaderExtensions.GetValueOrDefault<Boolean>("MiddlewareLogging", "LogResponses", true);
+            LogLevel middlewareLogLevel = ConfigurationReaderExtensions.GetValueOrDefault<LogLevel>("MiddlewareLogging", "MiddlewareLogLevel", LogLevel.Warning);
+
+            RequestResponseMiddlewareLoggingConfig config =
+                new RequestResponseMiddlewareLoggingConfig(middlewareLogLevel, logRequests, logResponses);
+
+            services.AddSingleton(config);
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
@@ -120,7 +131,11 @@ namespace TestHosts
 
             if (env.IsDevelopment())
             {
-                nlogConfigFilename = $"nlog.{env.EnvironmentName}.config";
+                var developmentNlogConfigFilename = "nlog.development.config";
+                if (File.Exists(Path.Combine(env.ContentRootPath, developmentNlogConfigFilename)))
+                {
+                    nlogConfigFilename = developmentNlogConfigFilename;
+                }
                 app.UseDeveloperExceptionPage();
             }
 
@@ -130,15 +145,10 @@ namespace TestHosts
             ILogger logger = loggerFactory.CreateLogger("TestHosts");
 
             Logger.Initialise(logger);
-
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            //app.AddRequestLogging();
-            //app.AddResponseLogging();
-            //app.AddExceptionHandler();
+            
+            app.AddRequestLogging();
+            app.AddResponseLogging();
+            app.AddExceptionHandler();
 
             app.UseRouting();
 
@@ -265,6 +275,28 @@ namespace TestHosts
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(1),stoppingToken);
+            }
+        }
+    }
+
+    public static class ConfigurationReaderExtensions
+    {
+        public static T GetValueOrDefault<T>(String sectionName, String keyName, T defaultValue)
+        {
+            try
+            {
+                var value = ConfigurationReader.GetValue(sectionName, keyName);
+
+                if (String.IsNullOrEmpty(value))
+                {
+                    return defaultValue;
+                }
+
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            catch (KeyNotFoundException kex)
+            {
+                return defaultValue;
             }
         }
     }
