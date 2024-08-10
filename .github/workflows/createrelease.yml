@@ -86,3 +86,36 @@ jobs:
                    
           New-Service -Name $serviceName -BinaryPathName $servicePath -Description "Transaction Processing - Test Hosts" -DisplayName "Transaction Processing - Test Hosts" -StartupType Automatic
           Start-Service -Name $serviceName          
+
+  deployproduction:
+    runs-on: productionserver
+    needs: [buildlinux, deploystaging]
+    environment: production
+    name: "Deploy to Production"
+    
+    steps:
+      - name: Download the artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: testhosts
+
+      - name: Remove existing  Windows service
+        run: |
+          $serviceName = "Transaction Processing - Test Hosts"
+          # Check if the service exists
+          if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+            Stop-Service -Name $serviceName
+            sc.exe delete $serviceName
+          }
+
+      - name: Unzip the files
+        run: |
+          Expand-Archive -Path testhosts.zip -DestinationPath "C:\txnproc\transactionprocessing\testhosts" -Force
+      
+      - name: Install as a Windows service
+        run: |
+          $serviceName = "Transaction Processing - Test Hosts"
+          $servicePath = "C:\txnproc\transactionprocessing\TestHosts\TestHosts.exe"
+                   
+          New-Service -Name $serviceName -BinaryPathName $servicePath -Description "Transaction Processing - Test Hosts" -DisplayName "Transaction Processing - Test Hosts" -StartupType Automatic
+          Start-Service -Name $serviceName 
