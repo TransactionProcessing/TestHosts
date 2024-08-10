@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  build:
+  buildlinux:
     name: "Release"
     env:
         ASPNETCORE_ENVIRONMENT: "Production"
@@ -43,73 +43,46 @@ jobs:
       if: ${{ github.event.release.prerelease == false }}
       run: dotnet publish "TestHosts\TestHosts\TestHosts.csproj" --configuration Release --output publishOutput -r win-x64 --self-contained
    
-    - name: Create Zip package 🐙
-      id: package
-      uses: OctopusDeploy/create-zip-package-action@v3
-      with:
-        package_id: TestHosts
-        version: ${{ steps.get_version.outputs.VERSION }}
-        base_path: /home/runner/work/TestHosts/TestHosts/publishOutput
-        files: "**/*"
-        output_folder: /home/runner/work/TestHosts/TestHosts
+    - name: Build Release Package
+      run: |
+         cd /home/runner/work/TestHosts/TestHosts/publishOutput
+         zip -r ../testhosts.zip ./*
 
-    - name: Push a package to Octopus Deploy 🐙
-      uses: OctopusDeploy/push-package-action@v3
+    - name: Upload the artifact
+      uses: actions/upload-artifact@v3
       with:
-        api_key: ${{ secrets.OCTOPUS_APIKEY }}
-        server: ${{ secrets.OCTOPUS_URL }}
-        space: ${{ secrets.OCTOPUS_SPACE }}
-        packages: ${{ steps.package.outputs.package_file_path }}
+        name: testhosts
+        path: testhosts.zip        
+
+  deploystaging:
+    runs-on: stagingserver
+    needs: buildlinux
+    environment: staging
+    name: "Deploy to Staging"
     
-    - name: Get Release
-      if: ${{ github.event.release.prerelease == false }}
-      id: getrelease
-      uses: octokit/request-action@v2.0.17
-      with:
-          route: GET /repos/StuartFerguson/TestHosts/releases/tags/${{ steps.get_version.outputs.VERSION }}
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Download the artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: testhosts
 
-    - name: Build Release Notes
-      if: ${{ github.event.release.prerelease == false }}
-      id: buildreleasenotes
-      uses: gr2m/get-json-paths-action@v1.x
-      with:
-          json: ${{ steps.getrelease.outputs.data }}
-          releasenote: "body"
-    
-    - name: Create a release in Octopus Deploy 🐙
-      uses: OctopusDeploy/create-release-action@v3
-      id: "create_release"
-      with:
-        api_key: ${{ secrets.OCTOPUS_APIKEY }}
-        server: ${{ secrets.OCTOPUS_URL }}
-        space: ${{ secrets.OCTOPUS_SPACE }}
-        project: "Test Hosts"
-        package_version: ${{ steps.get_version.outputs.VERSION }}
-        release_notes: ${{ steps.buildreleasenotes.outputs.releasenote }}
-        release_number: ${{ steps.get_version.outputs.VERSION }}
-        ignore_existing: true
-        channel: "Default"
+      - name: Remove existing  Windows service
+        run: |
+          $serviceName = "Transaction Processing - Test Hosts"
+          # Check if the service exists
+          if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+            Stop-Service -Name $serviceName
+            sc.exe delete $serviceName
+          }
 
-    - name: Deploy a release in Octopus Deploy 🐙
-      uses: OctopusDeploy/deploy-release-action@v3
-      id: "deploy_release"
-      with:
-        api_key: ${{ secrets.OCTOPUS_APIKEY }}
-        server: ${{ secrets.OCTOPUS_URL }}
-        space: ${{ secrets.OCTOPUS_SPACE }}
-        project: "Test Hosts"
-        release_number: ${{steps.create_release.outputs.release_number}}
-        environments: |
-            Staging      
-            
-    - name: Await task in Octopus Deploy 🐙
-      uses: OctopusDeploy/await-task-action@v3
-      with:
-        api_key: ${{ secrets.OCTOPUS_APIKEY }}
-        server: ${{ secrets.OCTOPUS_URL }}
-        space: ${{ secrets.OCTOPUS_SPACE }}
-        timeout_after: 300
-        polling_interval: 30
-        server_task_id: ${{ fromJson(steps.deploy_release.outputs.server_tasks)[0].serverTaskId }}  
+      - name: Unzip the files
+        run: |
+          Expand-Archive -Path testhosts.zip -DestinationPath "C:\txnproc\transactionprocessing\testhosts" -Force
+      
+      - name: Install as a Windows service
+        run: |
+          $serviceName = "Transaction Processing - Test Hosts"
+          $servicePath = "C:\txnproc\transactionprocessing\TestHosts\TestHosts.exe"
+                   
+          New-Service -Name $serviceName -BinaryPathName $servicePath -Description "Transaction Processing - Test Hosts" -DisplayName "Transaction Processing - Test Hosts" -StartupType Automatic
+          Start-Service -Name $serviceName          
