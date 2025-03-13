@@ -7,28 +7,28 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.0.0" />
-	  <PackageReference Include="AspNetCore.HealthChecks.UI" Version="8.0.0" />
-	  <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
-	  <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="8.0.0" />
-	  <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="8.0.0" />
-	  <PackageReference Include="CoreWCF.Http" Version="1.5.2" />
-    <PackageReference Include="CoreWCF.Primitives" Version="1.5.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.6" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.2" />
-    <PackageReference Include="Shared" Version="2024.7.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageReference Include="NLog.Extensions.Logging" Version="5.3.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.3">
+	  <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.0.2" />
+	  <PackageReference Include="AspNetCore.HealthChecks.UI" Version="8.0.2" />
+	  <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
+	  <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="8.0.1" />
+	  <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="8.0.1" />
+	  <PackageReference Include="CoreWCF.Http" Version="1.7.0" />
+    <PackageReference Include="CoreWCF.Primitives" Version="1.7.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+    <PackageReference Include="Shared" Version="2025.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.4.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.14">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.14">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
