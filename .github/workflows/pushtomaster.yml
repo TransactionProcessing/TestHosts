@@ -19,6 +19,11 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Install NET 9
+      uses: actions/setup-dotnet@v4.0.1
+      with:
+        dotnet-version: '9.0.x'
+
     - name: Restore Nuget Packages
       run: dotnet restore TestHosts/TestHosts.sln --source ${{ secrets.PUBLICFEEDURL }} --source ${{ secrets.PRIVATEFEED_URL }}
 
