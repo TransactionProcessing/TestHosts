@@ -4,34 +4,34 @@ using TestHosts.Database.TestBank;
 
 namespace TestHosts.Controllers
 {
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Database.PataPawa;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
+    using Shared.EntityFramework;
     using Shared.General;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     [Route("api/developer")]
     [ApiController]
     public class DeveloperController : ControllerBase
     {
-        private readonly Func<String, PataPawaContext> ContextResolver;
+        private readonly IDbContextResolver<PataPawaContext> ContextResolver;
 
-        public DeveloperController(Func<String, PataPawaContext> contextResolver) {
+        public DeveloperController(IDbContextResolver<PataPawaContext> contextResolver) {
             this.ContextResolver = contextResolver;
         }
 
         [HttpPost]
         [Route("patapawaprepay/createuser")]
         public async Task<IActionResult> CreatePrepayUser([FromBody] CreatePatapawaPrePayUser request, CancellationToken cancellationToken){
-            String connectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
-            PataPawaContext context = this.ContextResolver(connectionString);
-
+            
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
 
             Guid userId = Guid.NewGuid();
 
-            PrePayUser user = await context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken);
+            PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken);
 
             if (user == null){
 
@@ -39,7 +39,7 @@ namespace TestHosts.Controllers
                 string base64String = Convert.ToBase64String(bytes);
 
                 // Create the user
-                await context.PrePayUsers.AddAsync(new PrePayUser
+                await resolvedContext.Context.PrePayUsers.AddAsync(new PrePayUser
                                                    {
                                                                       Balance = 0,
                                                                       Key = base64String,
@@ -47,7 +47,7 @@ namespace TestHosts.Controllers
                                                                       UserId = userId,
                                                                       UserName = request.UserName,
                                                                   }, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
+                await resolvedContext.Context.SaveChangesAsync(cancellationToken);
             }
 
             return this.Ok();
@@ -57,13 +57,9 @@ namespace TestHosts.Controllers
         [Route("patapawaprepay/adduserdebt")]
         public async Task<IActionResult> AddUserDebt([FromBody] AddPatapawaPrePayUserDebt request, CancellationToken cancellationToken)
         {
-            String connectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
-            PataPawaContext context = this.ContextResolver(connectionString);
-
-
-            Guid userId = Guid.NewGuid();
-
-            PrePayUser user = await context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            
+            PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken);
 
             if (user == null){
                 return this.NotFound();
@@ -71,7 +67,7 @@ namespace TestHosts.Controllers
 
             user.Balance += request.DebtAmount;
            
-            await context.SaveChangesAsync(cancellationToken);
+            await resolvedContext.Context.SaveChangesAsync(cancellationToken);
             
             return this.Ok();
         }
@@ -79,24 +75,22 @@ namespace TestHosts.Controllers
         [HttpPost]
         [Route("patapawaprepay/createmeter")]
         public async Task<IActionResult> CreatePrepayMeter([FromBody] CreatePatapawaPrePayMeter request, CancellationToken cancellationToken){
-            String connectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
-            PataPawaContext context = this.ContextResolver(connectionString);
-
-
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            
             Guid meterId = Guid.NewGuid();
 
-            PrePayMeter meter = await context.PrePayMeters.SingleOrDefaultAsync(m => m.MeterNumber == request.MeterNumber, cancellationToken);
+            PrePayMeter meter = await resolvedContext.Context.PrePayMeters.SingleOrDefaultAsync(m => m.MeterNumber == request.MeterNumber, cancellationToken);
 
             if (meter == null)
             {
                 // Create the meter
-                await context.PrePayMeters.AddAsync(new PrePayMeter
+                await resolvedContext.Context.PrePayMeters.AddAsync(new PrePayMeter
                                                    {
                                                        MeterNumber = request.MeterNumber,
                                                        CustomerName = request.CustomerName,
                                                        MeterId = meterId
                                                    }, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
+                await resolvedContext.Context.SaveChangesAsync(cancellationToken);
             }
 
             return this.Ok();
@@ -107,14 +101,13 @@ namespace TestHosts.Controllers
         public async Task<IActionResult> CreateHostConfiguration([FromBody] CreatePataPawaPostPayBill request,
                                                                  CancellationToken cancellationToken)
         {
-            String connectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
-            PataPawaContext context = this.ContextResolver(connectionString);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
 
             Guid billIdentifier = Guid.NewGuid();
 
             // TODO: check for a duplicate bill??
 
-            await context.PostPaidBills.AddAsync(new PostPaidBill {
+            await resolvedContext.Context.PostPaidBills.AddAsync(new PostPaidBill {
                                                                 Amount = request.Amount,
                                                                 AccountNumber = request.AccountNumber,
                                                                 DueDate = request.DueDate,
@@ -124,7 +117,7 @@ namespace TestHosts.Controllers
                                                             },
                                            cancellationToken);
             
-            await context.SaveChangesAsync(cancellationToken);
+            await resolvedContext.Context.SaveChangesAsync(cancellationToken);
 
             return this.Ok(new
                            {

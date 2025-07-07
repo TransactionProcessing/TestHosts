@@ -1,4 +1,6 @@
-﻿namespace TestHosts.SoapServices;
+﻿using Shared.EntityFramework;
+
+namespace TestHosts.SoapServices;
 
 using System;
 using System.Linq;
@@ -9,15 +11,11 @@ using DataTransferObjects;
 
 public class PataPawaPostPayService : IPataPawaPostPayService
 {
-    #region Fields
-
-    private readonly Func<String, PataPawaContext> ContextResolver;
-
-    #endregion
+    private readonly IDbContextResolver<PataPawaContext> ContextResolver;
 
     #region Constructors
 
-    public PataPawaPostPayService(Func<String, PataPawaContext> contextResolver) {
+    public PataPawaPostPayService(IDbContextResolver<PataPawaContext> contextResolver) {
         this.ContextResolver = contextResolver;
     }
 
@@ -28,13 +26,13 @@ public class PataPawaPostPayService : IPataPawaPostPayService
     public LoginResponse Login(String username,
                                String password) {
         // Check if we have an api key
-        using PataPawaContext context = this.ContextResolver("PataPawaReadModel");
-        PostPaidAccount account = PataPawaPostPayService.GetPostPaidAccount(username, context);
+        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+        PostPaidAccount account = PataPawaPostPayService.GetPostPaidAccount(username, resolvedContext.Context);
 
         if (account == null) {
             // this is a first time request
             // Create an account
-            account = PataPawaPostPayService.CreatePostPaidAccount(username, password, context);
+            account = PataPawaPostPayService.CreatePostPaidAccount(username, password, resolvedContext.Context);
 
             // return the key in the response
             return new LoginResponse {
@@ -69,8 +67,8 @@ public class PataPawaPostPayService : IPataPawaPostPayService
                                            String mobile_no,
                                            String customer_name,
                                            Decimal amount) {
-        using PataPawaContext context = this.ContextResolver("PataPawaReadModel");
-        PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, context);
+        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+        PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, resolvedContext.Context);
         if (account == null) {
             // TODO: this might not be the correct way to respond in this case
             return new ProcessBillResponse {
@@ -79,7 +77,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
                                            };
         }
 
-        PostPaidBill bill = PataPawaPostPayService.GetBill(account_no, context);
+        PostPaidBill bill = PataPawaPostPayService.GetBill(account_no, resolvedContext.Context);
 
         if (bill == null) {
             // Bill not found
@@ -90,7 +88,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
                                            };
         }
 
-        PataPawaPostPayService.MakeBillPayment(amount, bill, context);
+        PataPawaPostPayService.MakeBillPayment(amount, bill, resolvedContext.Context);
 
         // return the response
         return new ProcessBillResponse {
@@ -106,8 +104,8 @@ public class PataPawaPostPayService : IPataPawaPostPayService
     public VerifyResponse VerifyAccount(String username,
                                         String api_key,
                                         String account_no) {
-        using(PataPawaContext context = this.ContextResolver("PataPawaReadModel")) {
-            PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, context);
+        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+        PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, resolvedContext.Context);
             if (account == null) {
                 // TODO: this might not be the correct way to respond in this case
                 return new VerifyResponse {
@@ -119,7 +117,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
             }
 
             // We have now found an account, lets get the first due bill for the customer account number
-            PostPaidBill bill = PataPawaPostPayService.GetBill(account_no, context);
+            PostPaidBill bill = PataPawaPostPayService.GetBill(account_no, resolvedContext.Context);
 
             if (bill == null) {
                 // Bill not found
@@ -139,7 +137,6 @@ public class PataPawaPostPayService : IPataPawaPostPayService
                                           AccountNumber = bill.AccountNumber,
                                           DueDate = bill.DueDate
                                       };
-        }
     }
 
     private static PostPaidAccount CreatePostPaidAccount(String username,

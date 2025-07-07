@@ -84,28 +84,20 @@ namespace TestHosts
             //                       {
             //                           c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
             //                       });
-
+            services.AddSingleton(typeof(IDbContextResolver<>), typeof(DbContextResolver<>));
             if (Startup.WebHostEnvironment.IsEnvironment("IntegrationTest") || Startup.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true)
             {
                 services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase("TestBankReadModel"));
-                DbContextOptionsBuilder<TestBankContext> bankContextBuilder = new DbContextOptionsBuilder<TestBankContext>();
-                bankContextBuilder = bankContextBuilder.UseInMemoryDatabase("TestBankReadModel");
-                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(bankContextBuilder.Options); });
-
                 services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase("PataPawaReadModel"));
-                DbContextOptionsBuilder<PataPawaContext> pataPawaBuilder = new DbContextOptionsBuilder<PataPawaContext>();
-                pataPawaBuilder = pataPawaBuilder.UseInMemoryDatabase("PataPawaReadModel");
-                services.AddSingleton<Func<String, PataPawaContext>>(cont => (connectionString) => { return new PataPawaContext(pataPawaBuilder.Options); });
+
             }
             else
             {
                 String testBankConnectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
                 services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(testBankConnectionString));
-                services.AddSingleton<Func<String, TestBankContext>>(cont => (connectionString) => { return new TestBankContext(testBankConnectionString); });
                 
                 String pataPawaConnectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
                 services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
-                services.AddSingleton<Func<String, PataPawaContext>>(cont => (connectionString) => { return new PataPawaContext(pataPawaConnectionString); });
             }
 
             services.AddSingleton<PataPawaPostPayService>();
@@ -145,7 +137,7 @@ namespace TestHosts
             ILogger logger = loggerFactory.CreateLogger("TestHosts");
 
             Logger.Initialise(logger);
-            
+            app.UseMiddleware<CorrelationIdMiddleware>();
             app.AddRequestLogging();
             app.AddResponseLogging();
             app.AddExceptionHandler();
@@ -164,7 +156,7 @@ namespace TestHosts
             //                 });
 
             // this will do the initial DB population
-            this.InitializeDatabase(app);
+            InitializeDatabase(app).Wait(CancellationToken.None);
             app.UseEndpoints(endpoints => {
                 endpoints.MapControllers();
                 endpoints.MapHealthChecks("health", new HealthCheckOptions()
@@ -194,7 +186,7 @@ namespace TestHosts
 
         }
 
-        private void InitializeDatabase(IApplicationBuilder app)
+        async Task InitializeDatabase(IApplicationBuilder app)
         {
             using (IServiceScope serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
@@ -202,7 +194,13 @@ namespace TestHosts
                 if (testbankDbContext.Database.IsRelational())
                 {
                     testbankDbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
-                    testbankDbContext.Database.Migrate();
+                    try {
+                        await testbankDbContext.MigrateAsync(CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        
+                    }
                 }
 
                 PataPawaContext pataPawaContext = serviceScope.ServiceProvider.GetRequiredService<PataPawaContext>();
@@ -217,31 +215,24 @@ namespace TestHosts
 
     [ExcludeFromCodeCoverage]
     public class PendingPrePaymentProcessor : BackgroundService{
-        private readonly Func<String, PataPawaContext> ContextResolver;
+        private readonly IDbContextResolver<PataPawaContext> Resolver;
 
-        public PendingPrePaymentProcessor(Func<String, PataPawaContext> contextResolver){
-            this.ContextResolver = contextResolver;
+        public PendingPrePaymentProcessor(IDbContextResolver<PataPawaContext> resolver){
+            this.Resolver = resolver;
         }
-
-        private PataPawaContext GetPataPawaContext()
-        {
-            String connectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
-            PataPawaContext context = this.ContextResolver(connectionString);
-            return context;
-        }
-
+        
         protected override async Task ExecuteAsync(CancellationToken stoppingToken){
             while (stoppingToken.IsCancellationRequested == false){
                 // TODO: may introduce a date filter
-                PataPawaContext context = this.GetPataPawaContext();
+                using ResolvedDbContext<PataPawaContext>? resolvedContext = this.Resolver.Resolve("PataPawaReadModel");
 
-                var pendingTransactions = await context.Transactions.Where(t => t.IsPending).OrderBy(t => t.Date).ToListAsync(stoppingToken);
+                var pendingTransactions = await resolvedContext.Context.Transactions.Where(t => t.IsPending).OrderBy(t => t.Date).ToListAsync(stoppingToken);
 
                 if (pendingTransactions.Any()){
                     // Process the pending transactions
                     foreach (Transaction pendingTransaction in pendingTransactions){
 
-                        PrePayMeter meter = await context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
+                        PrePayMeter meter = await resolvedContext.Context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
 
                         pendingTransaction.Status = 0;
                         pendingTransaction.Messaage = "success";
@@ -270,7 +261,7 @@ namespace TestHosts
                         pendingTransaction.Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff");
                         pendingTransaction.IsPending = false;
 
-                        await context.SaveChangesAsync(stoppingToken);
+                        await resolvedContext.Context.SaveChangesAsync(stoppingToken);
                     }
                 }
 

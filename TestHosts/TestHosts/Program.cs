@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Shared.EntityFramework;
 
 namespace TestHosts
 {
@@ -46,10 +47,9 @@ namespace TestHosts
                                           {
                                               services.AddHostedService<PendingPrePaymentProcessor>(provider =>
                                                                                               {
-                                                                                                  Func<String, PataPawaContext> contextResolver = provider.GetRequiredService<Func<String, PataPawaContext>>();
-                                                                                                  PendingPrePaymentProcessor worker =
-                                                                                                      new PendingPrePaymentProcessor(contextResolver);
-                                                                                                  //worker.TraceGenerated += Worker_TraceGenerated;
+                                                                                                  IDbContextResolver<PataPawaContext> contextResolver = provider.GetRequiredService<IDbContextResolver<PataPawaContext>>();
+                                                                                                  PendingPrePaymentProcessor worker = new (contextResolver);
+                                                                                                  
                                                                                                   return worker;
                                                                                               });
                                           });
