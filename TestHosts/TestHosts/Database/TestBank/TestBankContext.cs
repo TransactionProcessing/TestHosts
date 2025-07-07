@@ -1,9 +1,11 @@
 ﻿namespace TestHosts.Database.TestBank
 {
-    using System;
-    using System.Collections.Generic;
     using Microsoft.EntityFrameworkCore;
     using Shared.General;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     public class TestBankContext : DbContext
     {
@@ -62,6 +64,22 @@
                                                                  });
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        public virtual async Task MigrateAsync(CancellationToken cancellationToken)
+        {
+            if (this.Database.IsSqlServer())
+            {
+                try
+                {
+                    await this.Database.MigrateAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception or handle it as needed
+                    throw new InvalidOperationException("An error occurred while migrating the database.", ex);
+                }
+            }
         }
     }
 }

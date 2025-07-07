@@ -1,34 +1,36 @@
 ﻿namespace TestHosts.Controllers
 {
+    using Database.TestBank;
+    using DataTransferObjects.TestBank;
+    using Microsoft.AspNetCore.Mvc;
+    using Newtonsoft.Json;
+    using Shared.EntityFramework;
+    using Shared.General;
+    using Shared.Logger;
     using System;
     using System.Linq;
     using System.Net.Http;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Database.TestBank;
-    using DataTransferObjects.TestBank;
-    using Microsoft.AspNetCore.Mvc;
-    using Newtonsoft.Json;
-    using Shared.General;
-    using Shared.Logger;
+    using TestHosts.Database.PataPawa;
     using Deposit = Database.TestBank.Deposit;
 
     [Route("api/testbank")]
     [ApiController]
     public class TestBankController : ControllerBase
     {
+        private readonly IDbContextResolver<TestBankContext> ContextResolver;
+
         #region Fields
 
-        private readonly Func<String, TestBankContext> ContextFactory;
 
         #endregion
 
         #region Constructors
 
-        public TestBankController(Func<String, TestBankContext> contextFactory)
-        {
-            this.ContextFactory = contextFactory;
+        public TestBankController(IDbContextResolver<TestBankContext> contextResolver) {
+            this.ContextResolver = contextResolver;
         }
 
         #endregion
@@ -40,12 +42,11 @@
         public async Task<IActionResult> CreateHostConfiguration([FromBody] CreateHostConfigurationRequest createHostConfigurationRequest,
                                                                  CancellationToken cancellationToken)
         {
-            var connectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
-            var context = this.ContextFactory(connectionString);
+            using ResolvedDbContext<TestBankContext>? resolvedContext = this.ContextResolver.Resolve("TestBankReadModel");
 
             Guid hostIdentifier = Guid.NewGuid();
 
-            var host = context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == createHostConfigurationRequest.AccountNumber &&
+            var host = resolvedContext.Context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == createHostConfigurationRequest.AccountNumber &&
                                                                        h.SortCode == createHostConfigurationRequest.SortCode);
 
             if (host != null)
@@ -60,8 +61,8 @@
                                                       HostIdentifier = hostIdentifier,
                                                       SortCode = createHostConfigurationRequest.SortCode
                                                   };
-            await context.HostConfigurations.AddAsync(hostConfiguration, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+            await resolvedContext.Context.HostConfigurations.AddAsync(hostConfiguration, cancellationToken);
+            await resolvedContext.Context.SaveChangesAsync(cancellationToken);
 
             return this.Ok(new
                            {
@@ -76,9 +77,8 @@
         {
             Logger.LogInformation(JsonConvert.SerializeObject(makeDepositRequest));
 
-            String connectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
-            TestBankContext context = this.ContextFactory(connectionString);
-            HostConfiguration host = context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == makeDepositRequest.ToAccountNumber &&
+            using ResolvedDbContext<TestBankContext>? resolvedContext = this.ContextResolver.Resolve("TestBankReadModel");
+            HostConfiguration host = resolvedContext.Context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == makeDepositRequest.ToAccountNumber &&
                                                                                      h.SortCode == makeDepositRequest.ToSortCode);
             Guid depositId = Guid.Empty;
             if (host == null)
@@ -98,8 +98,8 @@
                                       HostIdentifier = host.HostIdentifier,
                                       SentToHost = false
                                   };
-                await context.Deposits.AddAsync(deposit, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
+                await resolvedContext.Context.Deposits.AddAsync(deposit, cancellationToken);
+                await resolvedContext.Context.SaveChangesAsync(cancellationToken);
 
                 // Send to the call back Url (if specificed)
                 if (host.CallbackUri != null)
@@ -123,7 +123,7 @@
                     if (response.IsSuccessStatusCode)
                     {
                         deposit.SentToHost = true;
-                        await context.SaveChangesAsync(cancellationToken);
+                        await resolvedContext.Context.SaveChangesAsync(cancellationToken);
                     }
                 }
             
