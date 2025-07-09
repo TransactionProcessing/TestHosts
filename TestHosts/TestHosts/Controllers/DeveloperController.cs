@@ -47,7 +47,7 @@ namespace TestHosts.Controllers
                                                                       UserId = userId,
                                                                       UserName = request.UserName,
                                                                   }, cancellationToken);
-                //await resolvedContext.Context.SaveChangesAsync(cancellationToken);
+                await resolvedContext.Context.SaveChangesAsync(cancellationToken);
             }
 
             return this.Ok();
