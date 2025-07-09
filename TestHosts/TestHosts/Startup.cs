@@ -4,20 +4,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NLog.Extensions.Logging;
+using TestHosts.Common;
 
 namespace TestHosts
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Diagnostics.Metrics;
-    using System.DirectoryServices.Protocols;
-    using System.IO;
-    using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.ServiceModel;
-    using System.Threading;
-    using System.Threading.Tasks;
     using CoreWCF;
     using CoreWCF.Configuration;
     using CoreWCF.Description;
@@ -37,6 +27,18 @@ namespace TestHosts
     using Shared.General;
     using Shared.Logger;
     using Shared.Middleware;
+    using Shared.TennantContext;
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Diagnostics.Metrics;
+    using System.DirectoryServices.Protocols;
+    using System.IO;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.ServiceModel;
+    using System.Threading;
+    using System.Threading.Tasks;
     using TestHosts.SoapServices;
     using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -99,12 +101,13 @@ namespace TestHosts
                 String pataPawaConnectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
                 services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
             }
-
+            services.AddScoped<TenantContext>(x => new TenantContext());
             services.AddSingleton<PataPawaPostPayService>();
             services.AddMvc();
 
             services.AddServiceModelServices().AddServiceModelMetadata();
             services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
+            services.AddSingleton<IServiceBehavior, CorrelationIdBehavior>();
 
 
             bool logRequests = ConfigurationReader.GetValueOrDefault<Boolean>("MiddlewareLogging", "LogRequests", true);
@@ -137,7 +140,7 @@ namespace TestHosts
             ILogger logger = loggerFactory.CreateLogger("TestHosts");
 
             Logger.Initialise(logger);
-            app.UseMiddleware<CorrelationIdMiddleware>();
+            app.UseMiddleware<TenantMiddleware>();
             app.AddRequestLogging();
             app.AddResponseLogging();
             app.AddExceptionHandler();
@@ -174,7 +177,7 @@ namespace TestHosts
             app.UseServiceModel(builder => {
                                     builder.AddService<PataPawaPostPayService>((serviceOptions) => {
                                                                                   serviceOptions.DebugBehavior.IncludeExceptionDetailInFaults = true;
-                                                                              })
+                                    })
                                            // Add a BasicHttpBinding at a specific endpoint
                                            .AddServiceEndpoint<PataPawaPostPayService, IPataPawaPostPayService>(new BasicHttpBinding(), "/PataPawaPostPayService/basichttp");
                                     });
