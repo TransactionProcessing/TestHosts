@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NLog.Extensions.Logging;
+using Shared.Logger.TennantContext;
 using TestHosts.Common;
 
 namespace TestHosts
@@ -27,7 +28,6 @@ namespace TestHosts
     using Shared.General;
     using Shared.Logger;
     using Shared.Middleware;
-    using Shared.TennantContext;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
