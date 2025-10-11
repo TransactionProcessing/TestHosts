@@ -197,20 +197,14 @@ namespace TestHosts
                 if (testbankDbContext.Database.IsRelational())
                 {
                     testbankDbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
-                    try {
-                        await testbankDbContext.MigrateAsync(CancellationToken.None);
-                    }
-                    catch (Exception ex)
-                    {
-                        
-                    }
+                    await testbankDbContext.MigrateAsync(CancellationToken.None);
                 }
 
                 PataPawaContext pataPawaContext = serviceScope.ServiceProvider.GetRequiredService<PataPawaContext>();
                 if (pataPawaContext.Database.IsRelational())
                 {
                     pataPawaContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
-                    pataPawaContext.Database.Migrate();
+                    pataPawaContext.Database.MigrateAsync(CancellationToken.None);
                 }
             }
         }

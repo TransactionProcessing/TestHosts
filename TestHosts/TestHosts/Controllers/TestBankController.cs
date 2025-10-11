@@ -80,13 +80,12 @@
             using ResolvedDbContext<TestBankContext>? resolvedContext = this.ContextResolver.Resolve("TestBankReadModel");
             HostConfiguration host = resolvedContext.Context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == makeDepositRequest.ToAccountNumber &&
                                                                                      h.SortCode == makeDepositRequest.ToSortCode);
-            Guid depositId = Guid.Empty;
             if (host == null)
             {
                 return this.NotFound($"No host found");
             }
 
-            depositId = Guid.NewGuid();
+            Guid depositId = Guid.NewGuid();
                 Deposit deposit = new Deposit
                                   {
                                       Amount = makeDepositRequest.Amount,
