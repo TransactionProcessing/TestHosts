@@ -150,8 +150,9 @@
 // ----------------------------------------------------------------------
 // Middleware pipeline
 // ----------------------------------------------------------------------
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment()) {
             app.UseDeveloperExceptionPage();
+        }
 
 // Custom middleware
         app.UseMiddleware<TenantMiddleware>();
