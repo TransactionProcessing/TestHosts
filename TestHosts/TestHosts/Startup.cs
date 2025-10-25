@@ -3,9 +3,16 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using Shared.Logger.TennantContext;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TestHosts.Common;
+using TestHosts.Database.PataPawa;
+using TestHosts.Database.TestBank;
 
 namespace TestHosts
 {
@@ -23,6 +30,7 @@ namespace TestHosts
     using Microsoft.OpenApi.Models;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Serialization;
+    using NLog;
     using Shared.EntityFramework;
     using Shared.Extensions;
     using Shared.General;
@@ -41,174 +49,6 @@ namespace TestHosts
     using System.Threading.Tasks;
     using TestHosts.SoapServices;
     using ILogger = Microsoft.Extensions.Logging.ILogger;
-
-    public class Startup
-    {
-        public Startup(IWebHostEnvironment webHostEnvironment)
-        {
-            IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(webHostEnvironment.ContentRootPath)
-                                                                      .AddJsonFile("/home/txnproc/config/appsettings.json", true, true)
-                                                                      .AddJsonFile($"/home/txnproc/config/appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true)
-                                                                      .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                                                                      .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                                                                      .AddEnvironmentVariables();
-
-            Startup.Configuration = builder.Build();
-            Startup.WebHostEnvironment = webHostEnvironment;
-        }
-
-        public static IConfigurationRoot Configuration { get; set; }
-
-        public static IWebHostEnvironment WebHostEnvironment { get; set; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
-            ConfigurationReader.Initialise(Startup.Configuration);
-
-            services.AddHealthChecks().AddSqlServer(connectionString: ConfigurationReader.GetConnectionString("HealthCheck"),
-                                                    healthQuery: "SELECT 1;",
-                                                    name: "Read Model Server",
-                                                    failureStatus: HealthStatus.Degraded,
-                                                    tags: new[] { "db", "sql", "sqlserver" });
-
-            services.AddControllers().AddNewtonsoftJson(options =>
-                                                        {
-                                                            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                                                            options.SerializerSettings.TypeNameHandling = TypeNameHandling.None;
-                                                            options.SerializerSettings.Formatting = Formatting.Indented;
-                                                            options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
-                                                            options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                                                        });
-
-            // Register the Swagger generator, defining 1 or more Swagger documents
-            //services.AddSwaggerGen(c =>
-            //                       {
-            //                           c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-            //                       });
-            services.AddSingleton(typeof(IDbContextResolver<>), typeof(DbContextResolver<>));
-            if (Startup.WebHostEnvironment.IsEnvironment("IntegrationTest") || Startup.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true)
-            {
-                services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase("TestBankReadModel"));
-                services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase("PataPawaReadModel"));
-
-            }
-            else
-            {
-                String testBankConnectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
-                services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(testBankConnectionString));
-                
-                String pataPawaConnectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
-                services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
-            }
-            services.AddScoped<TenantContext>(x => new TenantContext());
-            services.AddSingleton<PataPawaPostPayService>();
-            services.AddMvc();
-
-            services.AddServiceModelServices().AddServiceModelMetadata();
-            services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
-            services.AddSingleton<IServiceBehavior, CorrelationIdBehavior>();
-
-
-            bool logRequests = ConfigurationReader.GetValueOrDefault<Boolean>("MiddlewareLogging", "LogRequests", true);
-            bool logResponses = ConfigurationReader.GetValueOrDefault<Boolean>("MiddlewareLogging", "LogResponses", true);
-            LogLevel middlewareLogLevel = ConfigurationReader.GetValueOrDefault<LogLevel>("MiddlewareLogging", "MiddlewareLogLevel", LogLevel.Warning);
-
-            RequestResponseMiddlewareLoggingConfig config =
-                new RequestResponseMiddlewareLoggingConfig(middlewareLogLevel, logRequests, logResponses);
-
-            services.AddSingleton(config);
-        }
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
-        {
-            String nlogConfigFilename = "nlog.config";
-
-            if (env.IsDevelopment())
-            {
-                var developmentNlogConfigFilename = "nlog.development.config";
-                if (File.Exists(Path.Combine(env.ContentRootPath, developmentNlogConfigFilename)))
-                {
-                    nlogConfigFilename = developmentNlogConfigFilename;
-                }
-                app.UseDeveloperExceptionPage();
-            }
-
-            loggerFactory.ConfigureNLog(Path.Combine(env.ContentRootPath, nlogConfigFilename));
-            loggerFactory.AddNLog();
-
-            ILogger logger = loggerFactory.CreateLogger("TestHosts");
-
-            Logger.Initialise(logger);
-            app.UseMiddleware<TenantMiddleware>();
-            app.AddRequestLogging();
-            app.AddResponseLogging();
-            app.AddExceptionHandler();
-
-            app.UseRouting();
-
-            // Enable middleware to serve generated Swagger as a JSON endpoint.
-            //app.UseSwagger();
-
-            //// Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
-            //// specifying the Swagger JSON endpoint.
-            //app.UseSwaggerUI(c =>
-            //                 {
-            //                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-            //                     c.RoutePrefix = string.Empty;
-            //                 });
-
-            // this will do the initial DB population
-            InitializeDatabase(app).Wait(CancellationToken.None);
-            app.UseEndpoints(endpoints => {
-                endpoints.MapControllers();
-                endpoints.MapHealthChecks("health", new HealthCheckOptions()
-                                                    {
-                                                        Predicate = _ => true,
-                                                        ResponseWriter = Shared.HealthChecks.HealthCheckMiddleware.WriteResponse
-                                                    });
-                endpoints.MapHealthChecks("healthui", new HealthCheckOptions()
-                                                      {
-                                                          Predicate = _ => true,
-                                                          ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-                                                      });
-            });
-
-            app.UseServiceModel(builder => {
-                                    builder.AddService<PataPawaPostPayService>((serviceOptions) => {
-                                                                                  serviceOptions.DebugBehavior.IncludeExceptionDetailInFaults = true;
-                                    })
-                                           // Add a BasicHttpBinding at a specific endpoint
-                                           .AddServiceEndpoint<PataPawaPostPayService, IPataPawaPostPayService>(new BasicHttpBinding(), "/PataPawaPostPayService/basichttp");
-                                    });
-
-            ServiceMetadataBehavior serviceMetadataBehavior = app.ApplicationServices.GetRequiredService<CoreWCF.Description.ServiceMetadataBehavior>();
-            serviceMetadataBehavior.HttpGetEnabled = true;
-
-            
-
-        }
-
-        async Task InitializeDatabase(IApplicationBuilder app)
-        {
-            using (IServiceScope serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-            {
-                TestBankContext testbankDbContext = serviceScope.ServiceProvider.GetRequiredService<TestBankContext>();
-                if (testbankDbContext.Database.IsRelational())
-                {
-                    testbankDbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
-                    await testbankDbContext.MigrateAsync(CancellationToken.None);
-                }
-
-                PataPawaContext pataPawaContext = serviceScope.ServiceProvider.GetRequiredService<PataPawaContext>();
-                if (pataPawaContext.Database.IsRelational())
-                {
-                    pataPawaContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
-                    pataPawaContext.Database.MigrateAsync(CancellationToken.None);
-                }
-            }
-        }
-    }
 
     [ExcludeFromCodeCoverage]
     public class PendingPrePaymentProcessor : BackgroundService{
@@ -266,4 +106,42 @@ namespace TestHosts
             }
         }
     }
+}
+
+public sealed class DatabaseInitializerHostedService : IHostedService
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<DatabaseInitializerHostedService> _logger;
+
+    public DatabaseInitializerHostedService(IServiceProvider serviceProvider, ILogger<DatabaseInitializerHostedService> logger)
+    {
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting database initialization...");
+
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var pataPawaContext = scope.ServiceProvider.GetRequiredService<PataPawaContext>();
+
+            // Example: apply migrations or seed data
+            await pataPawaContext.Database.MigrateAsync(cancellationToken);
+
+            var bankContext = scope.ServiceProvider.GetRequiredService<TestBankContext>();
+            await bankContext.Database.MigrateAsync(cancellationToken);
+
+            _logger.LogInformation("Database initialization completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Database initialization failed.");
+            throw; // Let the host fail fast if initialization is critical
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
