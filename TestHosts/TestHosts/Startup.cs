@@ -10,6 +10,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Shared.Logger;
 using TestHosts.Common;
 using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
@@ -111,34 +112,42 @@ namespace TestHosts
 public sealed class DatabaseInitializerHostedService : IHostedService
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<DatabaseInitializerHostedService> _logger;
 
-    public DatabaseInitializerHostedService(IServiceProvider serviceProvider, ILogger<DatabaseInitializerHostedService> logger)
+    public DatabaseInitializerHostedService(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting database initialization...");
+        Logger.LogWarning("Starting database initialization...");
 
         try
         {
             using var scope = _serviceProvider.CreateScope();
-            var pataPawaContext = scope.ServiceProvider.GetRequiredService<PataPawaContext>();
+            PataPawaContext pataPawaContext = scope.ServiceProvider.GetRequiredService<PataPawaContext>();
 
-            // Example: apply migrations or seed data
-            await pataPawaContext.Database.MigrateAsync(cancellationToken);
+            if (pataPawaContext.Database.IsRelational()) {
+                // Example: apply migrations or seed data
+                await pataPawaContext.Database.MigrateAsync(cancellationToken);
+            }
+            //else {
+            //    await pataPawaContext.Database.EnsureCreatedAsync(cancellationToken);
+            //}
 
-            var bankContext = scope.ServiceProvider.GetRequiredService<TestBankContext>();
-            await bankContext.Database.MigrateAsync(cancellationToken);
+            TestBankContext bankContext = scope.ServiceProvider.GetRequiredService<TestBankContext>();
+            if (bankContext.Database.IsRelational()) {
+                await bankContext.Database.MigrateAsync(cancellationToken);
+            }
+            //else {
+            //    await bankContext.Database.EnsureCreatedAsync(cancellationToken);
+            //}
 
-            _logger.LogInformation("Database initialization completed successfully.");
+            Logger.LogWarning("Database initialization completed successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Database initialization failed.");
+            Logger.LogError("Database initialization failed.", ex);
             throw; // Let the host fail fast if initialization is critical
         }
     }
