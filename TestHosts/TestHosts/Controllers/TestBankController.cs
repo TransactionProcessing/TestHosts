@@ -80,8 +80,7 @@
             using ResolvedDbContext<TestBankContext>? resolvedContext = this.ContextResolver.Resolve("TestBankReadModel");
             HostConfiguration host = resolvedContext.Context.HostConfigurations.SingleOrDefault(h => h.AccountNumber == makeDepositRequest.ToAccountNumber &&
                                                                                      h.SortCode == makeDepositRequest.ToSortCode);
-            if (host == null)
-            {
+            if (host == null) {
                 return this.NotFound($"No host found");
             }
 
@@ -101,33 +100,29 @@
                 await resolvedContext.Context.SaveChangesAsync(cancellationToken);
 
                 // Send to the call back Url (if specificed)
-                if (host.CallbackUri != null)
-                {
+                if (host.CallbackUri != null) {
                     // Convert the entity to a DTO
-                    DataTransferObjects.TestBank.Deposit depositDto = new DataTransferObjects.TestBank.Deposit()
-                                                                      {
-                                                                          Amount = makeDepositRequest.Amount,
-                                                                          AccountNumber = makeDepositRequest.ToAccountNumber,
-                                                                          SortCode = makeDepositRequest.ToSortCode,
-                                                                          DateTime = makeDepositRequest.DateTime,
-                                                                          Reference = makeDepositRequest.DepositReference,
-                                                                          DepositId = depositId,
-                                                                          HostIdentifier = host.HostIdentifier
-                                                                      };
+                    DataTransferObjects.TestBank.Deposit depositDto = new() {
+                        Amount = makeDepositRequest.Amount,
+                        AccountNumber = makeDepositRequest.ToAccountNumber,
+                        SortCode = makeDepositRequest.ToSortCode,
+                        DateTime = makeDepositRequest.DateTime,
+                        Reference = makeDepositRequest.DepositReference,
+                        DepositId = depositId,
+                        HostIdentifier = host.HostIdentifier
+                    };
 
-                    HttpClient client = new HttpClient();
+                    HttpClient client = new();
                     HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, host.CallbackUri);
                     requestMessage.Content = new StringContent(JsonConvert.SerializeObject(depositDto), Encoding.UTF8, "application/json");
                     HttpResponseMessage response = await client.SendAsync(requestMessage, cancellationToken);
-                    if (response.IsSuccessStatusCode)
-                    {
+                    if (response.IsSuccessStatusCode) {
                         deposit.SentToHost = true;
                         await resolvedContext.Context.SaveChangesAsync(cancellationToken);
                     }
                 }
-            
-            return this.Ok(new
-                           {
+
+                return this.Ok(new {
                                host.HostIdentifier,
                                DepositId = depositId
                            });
