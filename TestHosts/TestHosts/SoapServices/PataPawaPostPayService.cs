@@ -12,7 +12,7 @@ using DataTransferObjects;
 public class PataPawaPostPayService : IPataPawaPostPayService
 {
     private readonly IDbContextResolver<PataPawaContext> ContextResolver;
-
+    private const String PataPawaReadModelKey = "PataPawaReadModel";
     #region Constructors
 
     public PataPawaPostPayService(IDbContextResolver<PataPawaContext> contextResolver) {
@@ -26,7 +26,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
     public LoginResponse Login(String username,
                                String password) {
         // Check if we have an api key
-        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
         PostPaidAccount account = PataPawaPostPayService.GetPostPaidAccount(username, resolvedContext.Context);
 
         if (account == null) {
@@ -67,7 +67,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
                                            String mobile_no,
                                            String customer_name,
                                            Decimal amount) {
-        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
         PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, resolvedContext.Context);
         if (account == null) {
             // TODO: this might not be the correct way to respond in this case
@@ -104,7 +104,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
     public VerifyResponse VerifyAccount(String username,
                                         String api_key,
                                         String account_no) {
-        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+        using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
         PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, resolvedContext.Context);
             if (account == null) {
                 // TODO: this might not be the correct way to respond in this case

@@ -16,9 +16,9 @@
     [ApiController]
     public class PataPawaPrePaidController : ControllerBase{
         private readonly IDbContextResolver<PataPawaContext> ContextResolver;
-
+        private const String PataPawaReadModelKey = "PataPawaReadModel";
         #region Fields
-        
+
         //private List<(String username, String password, String key, String balance)> users = new();
 
         #endregion
@@ -175,7 +175,7 @@
             String key = requestForm["key"].ToString();
             String meter = requestForm["meter"].ToString();
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Key == key, cancellationToken);
 
@@ -196,7 +196,7 @@
             if (meterValidation.result != null)
                 return meterValidation.result;
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             IQueryable<Database.PataPawa.Transaction> transactions = resolvedContext.Context.Transactions.Where(t => t.MeterNumber == meter).AsQueryable();
 
@@ -223,7 +223,7 @@
             String username = requestForm["username"].ToString();
             String password = requestForm["password"].ToString();
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Password == password, cancellationToken);
 
@@ -272,7 +272,7 @@
             if (meterValidation.result != null)
                 return meterValidation.result;
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             Database.PataPawa.Transaction transaction = this.CreateTransactionRecord(amount, meterValidation.meterDetails);
 
@@ -320,7 +320,7 @@
                                                        }));
             }
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             PrePayMeter meterDetails = await resolvedContext.Context.PrePayMeters.SingleOrDefaultAsync(m => m.MeterNumber == meterNumber, cancellationToken);
 
