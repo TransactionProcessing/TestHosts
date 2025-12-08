@@ -8,6 +8,7 @@
     using Shared.General;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.Metrics;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -57,81 +58,73 @@
             return response;
         }
 
+        private Database.PataPawa.Transaction CreatePendingTransaction(PrePayMeter meter) => new() {
+            Date = DateTime.Now,
+            Status = 0,
+            Messaage = "transaction still pending",
+            IsPending = true,
+            MeterNumber = meter.MeterNumber
+        };
+
+        private Database.PataPawa.Transaction CreateTimeBasedFailedTransaction() => new() {
+            Date = DateTime.Now,
+            Status = 2,
+            Messaage = "MTRFE013-M1: There is an insufficient amount (676.77) for the time based \\r\\ncharges (3132). Either tender more money or request less units.",
+            IsPending = false
+        };
+
+        private Database.PataPawa.Transaction CreateInsufficientFloatFailedTransaction() => new() {
+                Date = DateTime.Now,
+                Status = 2,
+                Messaage = "MTRFE013-M1: There is an insufficient amount (676.77) for the time based \\r\\ncharges (3132). Either tender more money or request less units.",
+                IsPending = false
+            };
+        
+        private Database.PataPawa.Transaction CreateTooSoonFailedTransaction() => new()
+            {
+                Date = DateTime.Now,
+                Status = 1,
+                Messaage = "This transaction has been done too soon from the last one. Please wait for a \\r\\nfew minutes.",
+                IsPending = false
+            };
+
+        private Database.PataPawa.Transaction CreateSuccessfulTransaction(PrePayMeter meter) => new()
+            {
+                Status = 0,
+                Messaage = Responses.Success,
+                Vendor = "support",
+                MeterNumber = meter.MeterNumber,
+                ResultCode = "elec000",
+                StandardTokenAmt = 64,
+                StandardTokenTax = 0,
+                Units = 6.1m,
+                Token = Guid.NewGuid().ToString("N"),
+                StandardTokenRctNum = "Ce001OVS3709952",
+                Date = DateTime.Now,
+                TotalAmount = 400,
+                Charges = [
+                    new() {
+                        ERCCharge = 3.19m,
+                        ForexCharge = 0.47m,
+                        FuelIndexCharge = 2.47m,
+                        InflationAdjustment = 0,
+                        MonthlyFC = 13.27m,
+                        REPCharge = 1.39m,
+                        TotalTax = 15.21m
+                    }
+                ],
+                CustomerName = meter.CustomerName,
+                Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff"),
+                IsPending = false
+            };
+
         private Database.PataPawa.Transaction CreateTransactionRecord(String amount, PrePayMeter meter){
-            Database.PataPawa.Transaction CreatePendingTransaction(){
-                return new Database.PataPawa.Transaction{
-                                                            Date = DateTime.Now,
-                                                            Status = 0,
-                                                            Messaage = "transaction still pending",
-                                                            IsPending = true,
-                                                            MeterNumber = meter.MeterNumber
-                                                        };
-            }
-
-            Database.PataPawa.Transaction CreateTimeBasedFailedTransaction(){
-                return new Database.PataPawa.Transaction{
-                                                            Date = DateTime.Now,
-                                                            Status = 2,
-                                                            Messaage = "MTRFE013-M1: There is an insufficient amount (676.77) for the time based \\r\\ncharges (3132). Either tender more money or request less units.",
-                                                            IsPending = false
-                                                        };
-            }
-
-            Database.PataPawa.Transaction CreateInsufficientFloatFailedTransaction(){
-                return new Database.PataPawa.Transaction{
-                                                            Date = DateTime.Now,
-                                                            Status = 2,
-                                                            Messaage = "MTRFE013-M1: There is an insufficient amount (676.77) for the time based \\r\\ncharges (3132). Either tender more money or request less units.",
-                                                            IsPending = false
-                                                        };
-            }
-
-            Database.PataPawa.Transaction CreateTooSoonFailedTransaction(){
-                return new Database.PataPawa.Transaction{
-                                                            Date = DateTime.Now,
-                                                            Status = 1,
-                                                            Messaage = "This transaction has been done too soon from the last one. Please wait for a \\r\\nfew minutes.",
-                                                            IsPending = false
-                                                        };
-            }
-
-            Database.PataPawa.Transaction CreateSuccessfulTransaction(){
-                return new Database.PataPawa.Transaction{
-                                                            Status = 0,
-                                                            Messaage = Responses.Success,
-                                                            Vendor = "support",
-                                                            MeterNumber = meter.MeterNumber,
-                                                            ResultCode = "elec000",
-                                                            StandardTokenAmt = 64,
-                                                            StandardTokenTax = 0,
-                                                            Units = 6.1m,
-                                                            Token = Guid.NewGuid().ToString("N"),
-                                                            StandardTokenRctNum = "Ce001OVS3709952",
-                                                            Date = DateTime.Now,
-                                                            TotalAmount = 400,
-                                                            Charges = new List<TransactionCharge>{
-                                                                                                     new TransactionCharge{
-                                                                                                                              ERCCharge = 3.19m,
-                                                                                                                              ForexCharge = 0.47m,
-                                                                                                                              FuelIndexCharge = 2.47m,
-                                                                                                                              InflationAdjustment = 0,
-                                                                                                                              MonthlyFC = 13.27m,
-                                                                                                                              REPCharge = 1.39m,
-                                                                                                                              TotalTax = 15.21m
-                                                                                                                          }
-                                                                                                 },
-                                                            CustomerName = meter.CustomerName,
-                                                            Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff"),
-                                                            IsPending = false
-                                                        };
-            }
-
             Database.PataPawa.Transaction transaction = amount switch{
-                "150" => CreatePendingTransaction(),
+                "150" => CreatePendingTransaction(meter),
                 "999" => CreateTimeBasedFailedTransaction(),
                 "888" => CreateInsufficientFloatFailedTransaction(),
                 "777" => CreateTooSoonFailedTransaction(),
-                _ => CreateSuccessfulTransaction()
+                _ => CreateSuccessfulTransaction(meter)
             };
 
             return transaction;
