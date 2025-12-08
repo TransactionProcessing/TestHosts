@@ -13,15 +13,15 @@
     using System.Threading.Tasks;
 
     internal static class FormKeys {
-        internal static String Key = "key";
-        internal static String Meter = "meter";
-        internal static String Amount = "amount";
-        internal static String UserName = "username";
-        internal static String Password = "password";
+        internal const String Key = "key";
+        internal const String Meter = "meter";
+        internal const String Amount = "amount";
+        internal const String UserName = "username";
+        internal const String Password = "password";
     }
 
     internal static class Responses {
-        internal static String Success = "success";
+        internal const String Success = "success";
     }
 
     [Route("api/patapawaprepay")]
