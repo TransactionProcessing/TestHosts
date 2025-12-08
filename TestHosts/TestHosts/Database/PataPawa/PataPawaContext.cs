@@ -7,13 +7,13 @@ namespace TestHosts.Database.PataPawa
     public class PataPawaContext : DbContext
     {
         private readonly String ConnectionString;
-        
+        private const String PataPawaReadModelKey = "PataPawaReadModel";
         public PataPawaContext()
         {
             // This is the migration connection string
 
             // Get connection string from configuration.
-            this.ConnectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
+            this.ConnectionString = ConfigurationReader.GetConnectionString(PataPawaReadModelKey);
         }
 
         public PataPawaContext(String connectionString)

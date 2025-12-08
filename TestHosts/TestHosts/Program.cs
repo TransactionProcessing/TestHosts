@@ -20,6 +20,7 @@
     using Shared.Middleware;
     using System;
     using System.IO;
+    using System.Security;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Serialization;
@@ -31,7 +32,9 @@
     using TestHosts.SoapServices;
     using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-    try {
+    const String PataPawaReadModelKey = "PataPawaReadModel";
+    const String TestBankReadModelKey = "TestBankReadModel";
+try {
 
         WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = AppContext.BaseDirectory });
         
@@ -93,16 +96,16 @@
         builder.Services.AddSingleton(typeof(IDbContextResolver<>), typeof(DbContextResolver<>));
         if (builder.Environment.IsEnvironment("IntegrationTest") || builder.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true)
         {
-            builder.Services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase("TestBankReadModel"));
-            builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase("PataPawaReadModel"));
+            builder.Services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase(TestBankReadModelKey));
+            builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase(PataPawaReadModelKey));
 
         }
         else
         {
-            String testBankConnectionString = ConfigurationReader.GetConnectionString("TestBankReadModel");
+            String testBankConnectionString = ConfigurationReader.GetConnectionString(TestBankReadModelKey);
             builder.Services.AddDbContext<TestBankContext>(builder => builder.UseSqlServer(testBankConnectionString));
 
-            String pataPawaConnectionString = ConfigurationReader.GetConnectionString("PataPawaReadModel");
+            String pataPawaConnectionString = ConfigurationReader.GetConnectionString(PataPawaReadModelKey);
             builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
         }
         builder.Services.AddScoped<TenantContext>(x => new TenantContext());

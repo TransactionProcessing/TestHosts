@@ -18,7 +18,7 @@ namespace TestHosts.Controllers
     public class DeveloperController : ControllerBase
     {
         private readonly IDbContextResolver<PataPawaContext> ContextResolver;
-
+        private const String PataPawaReadModelKey = "PataPawaReadModel";
         public DeveloperController(IDbContextResolver<PataPawaContext> contextResolver) {
             this.ContextResolver = contextResolver;
         }
@@ -27,7 +27,7 @@ namespace TestHosts.Controllers
         [Route("patapawaprepay/createuser")]
         public async Task<IActionResult> CreatePrepayUser([FromBody] CreatePatapawaPrePayUser request, CancellationToken cancellationToken){
             
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             Guid userId = Guid.NewGuid();
 
@@ -57,7 +57,7 @@ namespace TestHosts.Controllers
         [Route("patapawaprepay/adduserdebt")]
         public async Task<IActionResult> AddUserDebt([FromBody] AddPatapawaPrePayUserDebt request, CancellationToken cancellationToken)
         {
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
             
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == request.UserName, cancellationToken);
 
@@ -75,7 +75,7 @@ namespace TestHosts.Controllers
         [HttpPost]
         [Route("patapawaprepay/createmeter")]
         public async Task<IActionResult> CreatePrepayMeter([FromBody] CreatePatapawaPrePayMeter request, CancellationToken cancellationToken){
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
             
             Guid meterId = Guid.NewGuid();
 
@@ -101,7 +101,7 @@ namespace TestHosts.Controllers
         public async Task<IActionResult> CreateHostConfiguration([FromBody] CreatePataPawaPostPayBill request,
                                                                  CancellationToken cancellationToken)
         {
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve("PataPawaReadModel");
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             Guid billIdentifier = Guid.NewGuid();
 
