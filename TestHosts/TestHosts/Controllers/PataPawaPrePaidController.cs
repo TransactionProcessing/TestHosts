@@ -17,12 +17,7 @@
     public class PataPawaPrePaidController : ControllerBase{
         private readonly IDbContextResolver<PataPawaContext> ContextResolver;
         private const String PataPawaReadModelKey = "PataPawaReadModel";
-        #region Fields
-
-        //private List<(String username, String password, String key, String balance)> users = new();
-
-        #endregion
-
+        
         #region Constructors
 
         public PataPawaPrePaidController(IDbContextResolver<PataPawaContext> contextResolver) {
@@ -179,7 +174,7 @@
 
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Key == key, cancellationToken);
 
-            var response = new BalanceResponse{
+            BalanceResponse response = new BalanceResponse{
                                                   status = 0,
                                                   msg = "success",
                                                   balance = user.Balance.ToString(),
@@ -188,8 +183,6 @@
         }
 
         private async Task<IActionResult> HandleLastVendRequest(RequestType xlatedRequestType, IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm["username"].ToString();
-            String key = requestForm["key"].ToString();
             String meter = requestForm["meter"].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
@@ -207,7 +200,7 @@
             Database.PataPawa.Transaction transaction = await transactions.OrderByDescending(t => t.Date).SingleOrDefaultAsync(cancellationToken);
 
             if (transaction == null){
-                VendResponse response = new VendResponse{
+                VendResponse response = new() {
                                                             status = 0,
                                                             msg = "Record not found"
                                                         };
@@ -228,7 +221,7 @@
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Password == password, cancellationToken);
 
             if (user == default){
-                LoginResponse errorResponse = new LoginResponse{
+                LoginResponse errorResponse = new() {
                                                                    status = 1,
                                                                    msg = "Wrong Username or Password"
                                                                };
@@ -245,15 +238,13 @@
         }
 
         private async Task<IActionResult> HandleMeterRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm["username"].ToString();
             String meter = requestForm["meter"].ToString();
-            String key = requestForm["key"].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
                 return meterValidation.result;
 
-            MeterResponse response = new MeterResponse{
+            MeterResponse response = new() {
                                                           status = 0,
                                                           msg = "success",
                                                           customerName = meterValidation.meterDetails.CustomerName
@@ -262,11 +253,8 @@
         }
 
         private async Task<IActionResult> HandleVendRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm["username"].ToString();
             String meter = requestForm["meter"].ToString();
-            String key = requestForm["key"].ToString();
             String amount = requestForm["amount"].ToString();
-            String customerName = requestForm["customerName"].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
@@ -325,11 +313,11 @@
             PrePayMeter meterDetails = await resolvedContext.Context.PrePayMeters.SingleOrDefaultAsync(m => m.MeterNumber == meterNumber, cancellationToken);
 
             if (meterDetails == default){
-                MeterResponse errorReponse = new MeterResponse{
+                MeterResponse errorResponse = new() {
                                                                   status = 1,
                                                                   msg = "Meter number not found"
                                                               };
-                return (null, this.Ok(errorReponse));
+                return (null, this.Ok(errorResponse));
             }
 
             return (meterDetails, null);
