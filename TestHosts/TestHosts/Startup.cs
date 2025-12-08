@@ -1,55 +1,24 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
-using Shared.Logger.TennantContext;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Shared.Logger;
-using TestHosts.Common;
 using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
 
 namespace TestHosts
 {
-    using CoreWCF;
-    using CoreWCF.Configuration;
-    using CoreWCF.Description;
-    using CoreWCF.IdentityModel.Protocols.WSTrust;
     using Database.PataPawa;
-    using Database.TestBank;
-    using HealthChecks.UI.Client;
-    using Microsoft.AspNetCore.Diagnostics.HealthChecks;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Diagnostics.HealthChecks;
-    using Microsoft.Extensions.Logging;
-    using Microsoft.OpenApi.Models;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Serialization;
-    using NLog;
     using Shared.EntityFramework;
-    using Shared.Extensions;
-    using Shared.General;
-    using Shared.Logger;
-    using Shared.Middleware;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.Diagnostics.Metrics;
-    using System.DirectoryServices.Protocols;
-    using System.IO;
     using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.ServiceModel;
     using System.Threading;
     using System.Threading.Tasks;
-    using TestHosts.SoapServices;
-    using ILogger = Microsoft.Extensions.Logging.ILogger;
 
     [ExcludeFromCodeCoverage]
     public class PendingPrePaymentProcessor : BackgroundService{
