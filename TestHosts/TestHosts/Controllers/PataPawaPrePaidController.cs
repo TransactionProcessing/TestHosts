@@ -12,6 +12,18 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    internal static class FormKeys {
+        internal static String Key = "key";
+        internal static String Meter = "meter";
+        internal static String Amount = "amount";
+        internal static String UserName = "username";
+        internal static String Password = "password";
+    }
+
+    internal static class Responses {
+        internal static String Success = "success";
+    }
+
     [Route("api/patapawaprepay")]
     [ApiController]
     public class PataPawaPrePaidController : ControllerBase{
@@ -86,7 +98,7 @@
             Database.PataPawa.Transaction CreateSuccessfulTransaction(){
                 return new Database.PataPawa.Transaction{
                                                             Status = 0,
-                                                            Messaage = "success",
+                                                            Messaage = Responses.Success,
                                                             Vendor = "support",
                                                             MeterNumber = meter.MeterNumber,
                                                             ResultCode = "elec000",
@@ -126,7 +138,7 @@
         }
 
         private VendResponse CreateVendResponse(Database.PataPawa.Transaction transaction){
-            VendResponse response = new VendResponse{
+            VendResponse response = new() {
                                                         status = transaction.Status,
                                                         msg = transaction.Messaage,
                                                         transaction = new Transaction{
@@ -166,24 +178,23 @@
         }
         
         private async Task<IActionResult> HandleBalanceRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm["username"].ToString();
-            String key = requestForm["key"].ToString();
-            String meter = requestForm["meter"].ToString();
+            String username = requestForm[FormKeys.UserName].ToString();
+            String key = requestForm[FormKeys.Key].ToString();
 
             using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Key == key, cancellationToken);
 
-            BalanceResponse response = new BalanceResponse{
+            BalanceResponse response = new() {
                                                   status = 0,
-                                                  msg = "success",
+                                                  msg = Responses.Success,
                                                   balance = user.Balance.ToString(),
                                               };
             return this.Ok(response);
         }
 
         private async Task<IActionResult> HandleLastVendRequest(RequestType xlatedRequestType, IFormCollection requestForm, CancellationToken cancellationToken){
-            String meter = requestForm["meter"].ToString();
+            String meter = requestForm[FormKeys.Meter].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
@@ -213,8 +224,8 @@
         }
 
         private async Task<IActionResult> HandleLoginRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm["username"].ToString();
-            String password = requestForm["password"].ToString();
+            String username = requestForm[FormKeys.UserName].ToString();
+            String password = requestForm[FormKeys.Password].ToString();
 
             using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
@@ -230,7 +241,7 @@
 
             LoginResponse response = new LoginResponse{
                                                           status = 0,
-                                                          msg = "success",
+                                                          msg = Responses.Success,
                                                           balance = user.Balance.ToString(),
                                                           key = user.Key,
                                                       };
@@ -238,7 +249,7 @@
         }
 
         private async Task<IActionResult> HandleMeterRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String meter = requestForm["meter"].ToString();
+            String meter = requestForm[FormKeys.Meter].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
@@ -246,15 +257,15 @@
 
             MeterResponse response = new() {
                                                           status = 0,
-                                                          msg = "success",
+                                                          msg = Responses.Success,
                                                           customerName = meterValidation.meterDetails.CustomerName
                                                       };
             return this.Ok(response);
         }
 
         private async Task<IActionResult> HandleVendRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String meter = requestForm["meter"].ToString();
-            String amount = requestForm["amount"].ToString();
+            String meter = requestForm[FormKeys.Meter].ToString();
+            String amount = requestForm[FormKeys.Amount].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
