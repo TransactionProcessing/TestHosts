@@ -104,9 +104,7 @@ namespace TestHosts.Controllers
             using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
 
             Guid billIdentifier = Guid.NewGuid();
-
-            // TODO: check for a duplicate bill??
-
+            
             await resolvedContext.Context.PostPaidBills.AddAsync(new PostPaidBill {
                                                                 Amount = request.Amount,
                                                                 AccountNumber = request.AccountNumber,
