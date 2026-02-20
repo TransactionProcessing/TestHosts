@@ -68,9 +68,8 @@ public class PataPawaPostPayService : IPataPawaPostPayService
                                            String customer_name,
                                            Decimal amount) {
         using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
-        PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, resolvedContext.Context);
+        PostPaidAccount account = GetAccount(username, api_key, resolvedContext.Context);
         if (account == null) {
-            // TODO: this might not be the correct way to respond in this case
             return new ProcessBillResponse {
                                                Status = -1,
                                                Message = "Account not found"
@@ -81,7 +80,6 @@ public class PataPawaPostPayService : IPataPawaPostPayService
 
         if (bill == null) {
             // Bill not found
-            // TODO: this might not be the correct way to respond in this case
             return new ProcessBillResponse {
                                                Status = -1,
                                                Message = $"Bill for account no [{account_no}] not found"
@@ -107,7 +105,6 @@ public class PataPawaPostPayService : IPataPawaPostPayService
         using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
         PostPaidAccount account = PataPawaPostPayService.GetAccount(username, api_key, resolvedContext.Context);
             if (account == null) {
-                // TODO: this might not be the correct way to respond in this case
                 return new VerifyResponse {
                                               AccountNumber = null,
                                               AccountBalance = 0,
@@ -121,7 +118,6 @@ public class PataPawaPostPayService : IPataPawaPostPayService
 
             if (bill == null) {
                 // Bill not found
-                // TODO: this might not be the correct way to respond in this case
                 return new VerifyResponse {
                                               AccountNumber = null,
                                               AccountBalance = 0,
@@ -142,7 +138,7 @@ public class PataPawaPostPayService : IPataPawaPostPayService
     private static PostPaidAccount CreatePostPaidAccount(String username,
                                                          String password,
                                                          PataPawaContext context) {
-        PostPaidAccount account = new PostPaidAccount {
+        PostPaidAccount account = new() {
                                                           Password = password,
                                                           UserName = username,
                                                           Balance = 0,
