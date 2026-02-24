@@ -30,46 +30,52 @@ namespace TestHosts
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken){
             while (stoppingToken.IsCancellationRequested == false){
-                // TODO: may introduce a date filter
-                using ResolvedDbContext<PataPawaContext>? resolvedContext = this.Resolver.Resolve("PataPawaReadModel");
+                try {
+                    // TODO: may introduce a date filter
+                    using ResolvedDbContext<PataPawaContext>? resolvedContext = this.Resolver.Resolve("PataPawaReadModel");
 
-                var pendingTransactions = await resolvedContext.Context.Transactions.Where(t => t.IsPending).OrderBy(t => t.Date).ToListAsync(stoppingToken);
+                    var pendingTransactions = await resolvedContext.Context.Transactions.Where(t => t.IsPending).OrderBy(t => t.Date).ToListAsync(stoppingToken);
 
-                if (pendingTransactions.Any()){
-                    // Process the pending transactions
-                    foreach (Transaction pendingTransaction in pendingTransactions){
+                    if (pendingTransactions.Any()) {
+                        // Process the pending transactions
+                        foreach (Transaction pendingTransaction in pendingTransactions) {
 
-                        PrePayMeter meter = await resolvedContext.Context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
+                            PrePayMeter meter = await resolvedContext.Context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
 
-                        pendingTransaction.Status = 0;
-                        pendingTransaction.Messaage = "success";
-                        pendingTransaction.Vendor = "support";
-                        pendingTransaction.MeterNumber = meter.MeterNumber;
-                        pendingTransaction.ResultCode = "elec000";
-                        pendingTransaction.StandardTokenAmt = 64;
-                        pendingTransaction.StandardTokenTax = 0;
-                        pendingTransaction.Units = 6.1m;
-                        pendingTransaction.Token = Guid.NewGuid().ToString("N");
-                        pendingTransaction.StandardTokenRctNum = "Ce001OVS3709952";
-                        pendingTransaction.Date = DateTime.Now;
-                        pendingTransaction.TotalAmount = 400;
-                        pendingTransaction.Charges = new List<TransactionCharge>{
-                                                                                    new TransactionCharge{
-                                                                                                             ERCCharge = 3.19m,
-                                                                                                             ForexCharge = 0.47m,
-                                                                                                             FuelIndexCharge = 2.47m,
-                                                                                                             InflationAdjustment = 0,
-                                                                                                             MonthlyFC = 13.27m,
-                                                                                                             REPCharge = 1.39m,
-                                                                                                             TotalTax = 15.21m
-                                                                                                         }
-                                                                                };
-                        pendingTransaction.CustomerName = meter.CustomerName;
-                        pendingTransaction.Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff");
-                        pendingTransaction.IsPending = false;
+                            pendingTransaction.Status = 0;
+                            pendingTransaction.Messaage = "success";
+                            pendingTransaction.Vendor = "support";
+                            pendingTransaction.MeterNumber = meter.MeterNumber;
+                            pendingTransaction.ResultCode = "elec000";
+                            pendingTransaction.StandardTokenAmt = 64;
+                            pendingTransaction.StandardTokenTax = 0;
+                            pendingTransaction.Units = 6.1m;
+                            pendingTransaction.Token = Guid.NewGuid().ToString("N");
+                            pendingTransaction.StandardTokenRctNum = "Ce001OVS3709952";
+                            pendingTransaction.Date = DateTime.Now;
+                            pendingTransaction.TotalAmount = 400;
+                            pendingTransaction.Charges = new List<TransactionCharge> {
+                                new TransactionCharge {
+                                    ERCCharge = 3.19m,
+                                    ForexCharge = 0.47m,
+                                    FuelIndexCharge = 2.47m,
+                                    InflationAdjustment = 0,
+                                    MonthlyFC = 13.27m,
+                                    REPCharge = 1.39m,
+                                    TotalTax = 15.21m
+                                }
+                            };
+                            pendingTransaction.CustomerName = meter.CustomerName;
+                            pendingTransaction.Reference = DateTime.Now.ToString("yyyyMMddhhmmsssfff");
+                            pendingTransaction.IsPending = false;
 
-                        await resolvedContext.Context.SaveChangesAsync(stoppingToken);
+                            await resolvedContext.Context.SaveChangesAsync(stoppingToken);
+                        }
                     }
+                }
+                catch (Exception ex) {
+                    Logger.LogError("Error processing pending transactions", ex);
+                    // Let the service contuine to run and attempt processing in the next cycle
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(1),stoppingToken);
