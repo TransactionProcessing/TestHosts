@@ -15,6 +15,6 @@ RUN dotnet publish "TestHosts.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish --chown=10001:0 /app/publish .
-USER 10001
+COPY --from=publish --chown=10001:10001 /app/publish .
+USER 10001:10001
 ENTRYPOINT ["dotnet", "TestHosts.dll"]
