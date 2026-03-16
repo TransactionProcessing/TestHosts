@@ -159,8 +159,7 @@ try {
 
 // Custom middleware
         app.UseMiddleware<TenantMiddleware>();
-        app.AddRequestLogging();
-        app.AddResponseLogging();
+        app.AddRequestResponseLogging();
         app.AddExceptionHandler();
 
         app.UseRouting();

@@ -104,7 +104,7 @@ public sealed class DatabaseInitializerHostedService : IHostedService
 
             if (pataPawaContext.Database.IsRelational()) {
                 // Example: apply migrations or seed data
-                pataPawaContext.Database.Migrate();
+                await pataPawaContext.Database.MigrateAsync(cancellationToken);
             }
             //else {
             //    await pataPawaContext.Database.EnsureCreatedAsync(cancellationToken);
@@ -112,7 +112,7 @@ public sealed class DatabaseInitializerHostedService : IHostedService
 
             TestBankContext bankContext = scope.ServiceProvider.GetRequiredService<TestBankContext>();
             if (bankContext.Database.IsRelational()) {
-                bankContext.Database.Migrate();
+                await bankContext.Database.MigrateAsync(cancellationToken);
             }
             //else {
             //    await bankContext.Database.EnsureCreatedAsync(cancellationToken);
