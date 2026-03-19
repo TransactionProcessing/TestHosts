@@ -20,10 +20,12 @@
     using Shared.Middleware;
     using System;
     using System.IO;
+    using System.Reflection;
     using System.Security;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Serialization;
+    using Sentry.Extensibility;
     using Shared.Logger.TennantContext;
     using TestHosts;
     using TestHosts.Common;
@@ -61,10 +63,30 @@ try {
         // ----------------------------------------------------------------------
         builder.WebHost.ConfigureKestrel(options => { options.AllowSynchronousIO = true; });
 
-// ----------------------------------------------------------------------
-// Configure NLog
-// ----------------------------------------------------------------------
-        string nlogConfigFilename = "nlog.config";
+    // ----------------------------------------------------------------------
+    // Configure Sentry
+    // ----------------------------------------------------------------------
+    var sentrySection = ConfigurationReader.GetValueOrDefault("SentryConfiguration", "Dsn", "N/A");
+        if (sentrySection != "N/A")
+        {
+            // Replace the condition below if you intended to only enable Sentry in certain environments.
+            if (builder.Environment.IsDevelopment() == false)
+            {
+                builder.WebHost.UseSentry(o =>
+                {
+                    o.Dsn = sentrySection;
+                    o.SendDefaultPii = true;
+                    o.MaxRequestBodySize = RequestSize.Always;
+                    o.CaptureBlockingCalls = true;
+                    o.Release = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+                });
+            }
+        }
+
+    // ----------------------------------------------------------------------
+    // Configure NLog
+    // ----------------------------------------------------------------------
+    string nlogConfigFilename = "nlog.config";
         if (builder.Environment.IsDevelopment()) {
             String devFile = Path.Combine(builder.Environment.ContentRootPath, "nlog.development.config");
             if (File.Exists(devFile))
