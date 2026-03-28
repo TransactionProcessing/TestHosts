@@ -6,27 +6,27 @@
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Diagnostics.HealthChecks;
     using Microsoft.AspNetCore.Hosting;
-    using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Diagnostics.HealthChecks;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Hosting.WindowsServices;
     using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Serialization;
     using NLog;
     using NLog.Web;
-using Sentry.Extensibility;
     using Shared.EntityFramework;
     using Shared.Extensions;
     using Shared.General;
-    using Shared.Logger.TennantContext;
     using Shared.Middleware;
     using System;
     using System.IO;
-using System.Reflection;
+    using System.Reflection;
     using System.Security;
+    using Microsoft.EntityFrameworkCore;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
+    using Sentry.Extensibility;
+    using Shared.Logger.TennantContext;
     using TestHosts;
     using TestHosts.Common;
     using TestHosts.Database.PataPawa;
@@ -52,12 +52,10 @@ try {
             .AddEnvironmentVariables();
 
         ConfigurationReader.Initialise(builder.Configuration);
-    
-
-// ----------------------------------------------------------------------
-// Configure Windows Service mode
-// ----------------------------------------------------------------------
-if (WindowsServiceHelpers.IsWindowsService())
+        // ----------------------------------------------------------------------
+        // Configure Windows Service mode
+        // ----------------------------------------------------------------------
+        if (WindowsServiceHelpers.IsWindowsService())
             builder.Host.UseWindowsService();
 
         // ----------------------------------------------------------------------
@@ -65,8 +63,10 @@ if (WindowsServiceHelpers.IsWindowsService())
         // ----------------------------------------------------------------------
         builder.WebHost.ConfigureKestrel(options => { options.AllowSynchronousIO = true; });
 
-        // Configure Sentry on the webBuilder using the config snapshot.
-        var sentrySection = ConfigurationReader.GetValueOrDefault("SentryConfiguration", "Dsn", "N/A");
+    // ----------------------------------------------------------------------
+    // Configure Sentry
+    // ----------------------------------------------------------------------
+    var sentrySection = ConfigurationReader.GetValueOrDefault("SentryConfiguration", "Dsn", "N/A");
         if (sentrySection != "N/A")
         {
             // Replace the condition below if you intended to only enable Sentry in certain environments.
@@ -77,8 +77,7 @@ if (WindowsServiceHelpers.IsWindowsService())
                     o.Dsn = sentrySection;
                     o.SendDefaultPii = true;
                     o.MaxRequestBodySize = RequestSize.Always;
-                    o.CaptureBlockingCalls = ConfigurationReader.GetValueOrDefault("SentryConfiguration", "CaptureBlockingCalls", false);
-                    o.IncludeActivityData = ConfigurationReader.GetValueOrDefault("SentryConfiguration", "IncludeActivityData", false);
+                    o.CaptureBlockingCalls = true;
                     o.Release = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
                 });
             }
