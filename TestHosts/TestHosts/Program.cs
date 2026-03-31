@@ -101,7 +101,7 @@ try {
         options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
     });
     builder.Services.AddHealthChecks().AddSqlServer(connectionString: ConfigurationReader.GetConnectionString("HealthCheck"), healthQuery: "SELECT 1;", name: "Read Model Server", failureStatus: HealthStatus.Degraded, tags: new[] { "db", "sql", "sqlserver" });
-    ;
+    
     builder.Services.AddServiceModelServices().AddServiceModelMetadata();
 
     builder.Services.AddSingleton(typeof(IDbContextResolver<>), typeof(DbContextResolver<>));
@@ -206,6 +206,6 @@ finally {
 
 
 public static class Constants {
-    public const String PataPawaReadModelConfig = "PataPawaReadModel";
-    public const String TestBankReadModelConfig = "TestBankReadModel";
+    public static readonly String PataPawaReadModelConfig = "PataPawaReadModel";
+    public static readonly String TestBankReadModelConfig = "TestBankReadModel";
 }
