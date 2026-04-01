@@ -13,14 +13,6 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    internal static class FormKeys {
-        internal const String Key = "key";
-        internal const String Meter = "meter";
-        internal const String Amount = "amount";
-        internal const String UserName = "username";
-        internal const String Password = "password";
-    }
-
     internal static class Responses {
         internal const String Success = "success";
     }
@@ -29,7 +21,6 @@
     [ApiController]
     public class PataPawaPrePaidController : ControllerBase{
         private readonly IDbContextResolver<PataPawaContext> ContextResolver;
-        private const String PataPawaReadModelKey = "PataPawaReadModel";
         
         #region Constructors
 
@@ -171,10 +162,10 @@
         }
         
         private async Task<IActionResult> HandleBalanceRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm[FormKeys.UserName].ToString();
-            String key = requestForm[FormKeys.Key].ToString();
+            String username = requestForm["username"].ToString();
+            String key = requestForm["key"].ToString();
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(Constants.PataPawaReadModelConfig);
 
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Key == key, cancellationToken);
 
@@ -187,13 +178,13 @@
         }
 
         private async Task<IActionResult> HandleLastVendRequest(RequestType xlatedRequestType, IFormCollection requestForm, CancellationToken cancellationToken){
-            String meter = requestForm[FormKeys.Meter].ToString();
+            String meter = requestForm["meter"].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
                 return meterValidation.result;
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(Constants.PataPawaReadModelConfig);
 
             IQueryable<Database.PataPawa.Transaction> transactions = resolvedContext.Context.Transactions.Where(t => t.MeterNumber == meter).AsQueryable();
 
@@ -217,10 +208,10 @@
         }
 
         private async Task<IActionResult> HandleLoginRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String username = requestForm[FormKeys.UserName].ToString();
-            String password = requestForm[FormKeys.Password].ToString();
+            String username = requestForm["username"].ToString();
+            String password = requestForm["password"].ToString();
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(Constants.PataPawaReadModelConfig);
 
             PrePayUser user = await resolvedContext.Context.PrePayUsers.SingleOrDefaultAsync(u => u.UserName == username && u.Password == password, cancellationToken);
 
@@ -242,7 +233,7 @@
         }
 
         private async Task<IActionResult> HandleMeterRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String meter = requestForm[FormKeys.Meter].ToString();
+            String meter = requestForm["meter"].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
@@ -257,14 +248,14 @@
         }
 
         private async Task<IActionResult> HandleVendRequest(IFormCollection requestForm, CancellationToken cancellationToken){
-            String meter = requestForm[FormKeys.Meter].ToString();
-            String amount = requestForm[FormKeys.Amount].ToString();
+            String meter = requestForm["meter"].ToString();
+            String amount = requestForm["amount"].ToString();
 
             (PrePayMeter meterDetails, IActionResult result) meterValidation = await this.ValidateMeterDetails(meter, cancellationToken);
             if (meterValidation.result != null)
                 return meterValidation.result;
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(Constants.PataPawaReadModelConfig);
 
             Database.PataPawa.Transaction transaction = this.CreateTransactionRecord(amount, meterValidation.meterDetails);
 
@@ -312,7 +303,7 @@
                                                        }));
             }
 
-            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(PataPawaReadModelKey);
+            using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(Constants.PataPawaReadModelConfig);
 
             PrePayMeter meterDetails = await resolvedContext.Context.PrePayMeters.SingleOrDefaultAsync(m => m.MeterNumber == meterNumber, cancellationToken);
 
