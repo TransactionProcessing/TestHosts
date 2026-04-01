@@ -18,7 +18,7 @@
         internal const String MeterFieldName = "meter";
         internal const String AmountFieldName = "amount";
         internal const String UserNameFieldName = "username";
-        internal const String PasswordFieldName = "password";
+        internal const String FormPasswordFieldName = "password";
     }
 
     internal static class Responses {
@@ -217,7 +217,7 @@
 
         private async Task<IActionResult> HandleLoginRequest(IFormCollection requestForm, CancellationToken cancellationToken){
             String username = requestForm[FormKeys.UserNameFieldName].ToString();
-            String password = requestForm[FormKeys.PasswordFieldName].ToString();
+            String password = requestForm[FormKeys.FormPasswordFieldName].ToString();
 
             using ResolvedDbContext<PataPawaContext>? resolvedContext = this.ContextResolver.Resolve(Constants.PataPawaReadModelConfig);
 
