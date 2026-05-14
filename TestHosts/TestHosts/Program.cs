@@ -31,7 +31,9 @@ using TestHosts;
 using TestHosts.Common;
 using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
+using TestHosts.Database.MobileWallet;
 using TestHosts.SoapServices;
+using TestHosts.Services.MobileWallet;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -108,6 +110,7 @@ try {
     if (builder.Environment.IsEnvironment("IntegrationTest") || builder.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true) {
         builder.Services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase(Constants.TestBankReadModelConfig));
         builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase(Constants.PataPawaReadModelConfig));
+        builder.Services.AddDbContext<MobileWalletContext>(builder => builder.UseInMemoryDatabase(Constants.MobileWalletReadModelConfig));
 
     }
     else {
@@ -116,8 +119,13 @@ try {
 
         String pataPawaConnectionString = ConfigurationReader.GetConnectionString(Constants.PataPawaReadModelConfig);
         builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
+
+        String mobileWalletConnectionString = ConfigurationReader.GetConnectionString(Constants.MobileWalletReadModelConfig);
+        builder.Services.AddDbContext<MobileWalletContext>(builder => builder.UseSqlServer(mobileWalletConnectionString));
     }
 
+    builder.Services.AddHttpClient();
+    builder.Services.AddScoped<MobileWalletService>();
     builder.Services.AddScoped<TenantContext>(x => new TenantContext());
     builder.Services.AddSingleton<PataPawaPostPayService>();
     // Add your background hosted service
@@ -128,6 +136,7 @@ try {
 
     // Database initialization will now be handled by a hosted service
     builder.Services.AddHostedService<DatabaseInitializerHostedService>();
+    builder.Services.AddHostedService<MobileWalletBackgroundService>();
 
     builder.Services.AddScoped<TenantContext>(x => new TenantContext());
     builder.Services.AddSingleton<PataPawaPostPayService>();
@@ -208,4 +217,5 @@ finally {
 public static class Constants {
     public static readonly String PataPawaReadModelConfig = "PataPawaReadModel";
     public static readonly String TestBankReadModelConfig = "TestBankReadModel";
+    public static readonly String MobileWalletReadModelConfig = "MobileWalletReadModel";
 }

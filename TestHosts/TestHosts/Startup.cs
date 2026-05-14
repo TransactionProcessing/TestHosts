@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Shared.Logger;
 using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
+using TestHosts.Database.MobileWallet;
+using TestHosts.Services.MobileWallet;
 
 namespace TestHosts
 {
@@ -117,6 +119,12 @@ public sealed class DatabaseInitializerHostedService : IHostedService
             //else {
             //    await bankContext.Database.EnsureCreatedAsync(cancellationToken);
             //}
+
+            MobileWalletContext mobileWalletContext = scope.ServiceProvider.GetRequiredService<MobileWalletContext>();
+            await mobileWalletContext.Database.EnsureCreatedAsync(cancellationToken);
+
+            MobileWalletService mobileWalletService = scope.ServiceProvider.GetRequiredService<MobileWalletService>();
+            await mobileWalletService.EnsureSeedDataAsync(cancellationToken);
 
             Logger.LogWarning("Database initialization completed successfully.");
         }
