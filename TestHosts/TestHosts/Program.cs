@@ -138,8 +138,6 @@ try {
     builder.Services.AddHostedService<DatabaseInitializerHostedService>();
     builder.Services.AddHostedService<MobileWalletBackgroundService>();
 
-    builder.Services.AddScoped<TenantContext>(x => new TenantContext());
-    builder.Services.AddSingleton<PataPawaPostPayService>();
     builder.Services.AddMvc();
 
     builder.Services.AddServiceModelServices().AddServiceModelMetadata();

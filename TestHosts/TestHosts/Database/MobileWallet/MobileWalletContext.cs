@@ -4,6 +4,16 @@ namespace TestHosts.Database.MobileWallet
     using Shared.General;
     using System;
 
+    internal static class MobileWalletStatus
+    {
+        internal const String Pending = "pending";
+        internal const String Completed = "completed";
+        internal const String Failed = "failed";
+        internal const String Rejected = "rejected";
+        internal const String Reversed = "reversed";
+        internal const String Active = "active";
+    }
+
     public class MobileWalletContext : DbContext
     {
         private readonly String ConnectionString;
@@ -83,7 +93,7 @@ namespace TestHosts.Database.MobileWallet
     {
         public String AccountReference { get; set; } = String.Empty;
         public String AccountType { get; set; } = "wallet";
-        public String Status { get; set; } = "active";
+        public String Status { get; set; } = MobileWalletStatus.Active;
         public String Currency { get; set; } = "USD";
         public Decimal AvailableBalance { get; set; }
         public String GivenName { get; set; } = String.Empty;
@@ -104,7 +114,7 @@ namespace TestHosts.Database.MobileWallet
         public String TransactionReference { get; set; } = String.Empty;
         public String ClientId { get; set; } = String.Empty;
         public String TransactionType { get; set; } = String.Empty;
-        public String Status { get; set; } = "pending";
+        public String Status { get; set; } = MobileWalletStatus.Pending;
         public String StatusMessage { get; set; } = "Transaction accepted for asynchronous processing.";
         public Decimal Amount { get; set; }
         public String Currency { get; set; } = "USD";
@@ -127,7 +137,7 @@ namespace TestHosts.Database.MobileWallet
         public String ClientId { get; set; } = String.Empty;
         public String OriginalTransactionReference { get; set; } = String.Empty;
         public String Reason { get; set; } = String.Empty;
-        public String Status { get; set; } = "pending";
+        public String Status { get; set; } = MobileWalletStatus.Pending;
         public String StatusMessage { get; set; } = "Reversal accepted for asynchronous processing.";
         public String IdempotencyKey { get; set; } = String.Empty;
         public String RequestPayload { get; set; } = String.Empty;
@@ -154,7 +164,7 @@ namespace TestHosts.Database.MobileWallet
         public String ResourceReference { get; set; } = String.Empty;
         public String CallbackUrl { get; set; } = String.Empty;
         public String Payload { get; set; } = String.Empty;
-        public String Status { get; set; } = "pending";
+        public String Status { get; set; } = MobileWalletStatus.Pending;
         public Int32 AttemptCount { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastAttemptAt { get; set; }

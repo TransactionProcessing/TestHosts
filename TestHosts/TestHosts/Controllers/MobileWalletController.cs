@@ -62,7 +62,7 @@ namespace TestHosts.Controllers
         [HttpPost("accounts")]
         public async Task<IActionResult> CreateAccount([FromBody] CreateMobileWalletAccountRequest request, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -83,7 +83,7 @@ namespace TestHosts.Controllers
             {
                 AccountReference = request.accountReference,
                 AccountType = request.accountType ?? "wallet",
-                Status = request.accountStatus ?? "active",
+                Status = request.accountStatus ?? MobileWalletStatus.Active,
                 Currency = request.currency,
                 AvailableBalance = request.initialBalance ?? 0,
                 GivenName = request.kycInformation?.givenName ?? String.Empty,
@@ -106,7 +106,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("account",
                                                 account.AccountReference,
                                                 "create",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 JsonConvert.SerializeObject(request),
@@ -119,7 +119,7 @@ namespace TestHosts.Controllers
         [HttpGet("accounts/{accountReference}")]
         public async Task<IActionResult> GetAccount(String accountReference, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -135,7 +135,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("account",
                                                 account.AccountReference,
                                                 "view",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 null,
@@ -148,7 +148,7 @@ namespace TestHosts.Controllers
         [HttpGet("accounts/{accountReference}/balance")]
         public async Task<IActionResult> GetAccountBalance(String accountReference, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -170,7 +170,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("account_balance",
                                                 account.AccountReference,
                                                 "view",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 null,
@@ -183,7 +183,7 @@ namespace TestHosts.Controllers
         [HttpGet("accounts/{accountReference}/status")]
         public async Task<IActionResult> GetAccountStatus(String accountReference, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -204,7 +204,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("account_status",
                                                 account.AccountReference,
                                                 "view",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 null,
@@ -217,7 +217,7 @@ namespace TestHosts.Controllers
         [HttpGet("accounts/{accountReference}/transactions")]
         public async Task<IActionResult> GetAccountTransactions(String accountReference, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -248,7 +248,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("account_transactions",
                                                 accountReference,
                                                 "list",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 null,
@@ -261,7 +261,7 @@ namespace TestHosts.Controllers
         [HttpPost("transactions/type/{transactionType}")]
         public async Task<IActionResult> CreateTransaction(String transactionType, [FromBody] CreateMobileWalletTransactionRequest request, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -280,7 +280,7 @@ namespace TestHosts.Controllers
             }
 
             String requestPayload = JsonConvert.SerializeObject(request);
-            MobileWalletTransaction? existingTransaction = await this.Context.Transactions.SingleOrDefaultAsync(t => t.ClientId == authResult.client.ClientId &&
+            MobileWalletTransaction? existingTransaction = await this.Context.Transactions.SingleOrDefaultAsync(t => t.ClientId == authResult.client!.ClientId &&
                                                                                                                        t.IdempotencyKey == idempotencyKey,
                                                                                                                  cancellationToken);
 
@@ -297,7 +297,7 @@ namespace TestHosts.Controllers
             MobileWalletTransaction transaction = new()
             {
                 TransactionReference = Guid.NewGuid().ToString("N"),
-                ClientId = authResult.client.ClientId,
+                ClientId = authResult.client!.ClientId,
                 TransactionType = transactionType,
                 Amount = request.amount,
                 Currency = request.currency,
@@ -319,7 +319,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("transaction",
                                                 transaction.TransactionReference,
                                                 "create",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 idempotencyKey,
                                                 requestPayload,
@@ -332,7 +332,7 @@ namespace TestHosts.Controllers
         [HttpGet("transactions/{transactionReference}")]
         public async Task<IActionResult> GetTransaction(String transactionReference, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -348,7 +348,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("transaction",
                                                 transaction.TransactionReference,
                                                 "view",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 null,
@@ -361,7 +361,7 @@ namespace TestHosts.Controllers
         [HttpPatch("transactions/{transactionReference}")]
         public async Task<IActionResult> UpdateTransaction(String transactionReference, [FromBody] UpdateMobileWalletTransactionRequest request, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -373,17 +373,17 @@ namespace TestHosts.Controllers
                 return this.NotFound();
             }
 
-            if (request.transactionStatus is not ("pending" or "completed" or "failed" or "rejected"))
+            if (this.IsSupportedTransactionStatus(request.transactionStatus) == false)
             {
-                return this.BadRequest(new { message = "transactionStatus must be one of pending, completed, failed or rejected." });
+                return this.BadRequest(new { message = $"transactionStatus must be one of {String.Join(", ", SupportedTransactionStatuses)}." });
             }
 
-            if (transaction.Status != "pending" && transaction.Status != request.transactionStatus)
+            if (transaction.Status != MobileWalletStatus.Pending && transaction.Status != request.transactionStatus)
             {
                 return this.Conflict(new { message = "Only pending transactions can be updated." });
             }
 
-            if (request.transactionStatus == "pending")
+            if (request.transactionStatus == MobileWalletStatus.Pending)
             {
                 transaction.StatusMessage = request.statusMessage ?? transaction.StatusMessage;
                 transaction.UpdatedAt = DateTime.UtcNow;
@@ -398,7 +398,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("transaction",
                                                 transaction.TransactionReference,
                                                 "update",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 JsonConvert.SerializeObject(request),
@@ -411,7 +411,7 @@ namespace TestHosts.Controllers
         [HttpPost("reversals")]
         public async Task<IActionResult> CreateReversal([FromBody] CreateMobileWalletReversalRequest request, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -429,7 +429,7 @@ namespace TestHosts.Controllers
             }
 
             String requestPayload = JsonConvert.SerializeObject(request);
-            MobileWalletReversal? existingReversal = await this.Context.Reversals.SingleOrDefaultAsync(r => r.ClientId == authResult.client.ClientId &&
+            MobileWalletReversal? existingReversal = await this.Context.Reversals.SingleOrDefaultAsync(r => r.ClientId == authResult.client!.ClientId &&
                                                                                                                r.IdempotencyKey == idempotencyKey,
                                                                                                          cancellationToken);
             if (existingReversal != null)
@@ -450,7 +450,7 @@ namespace TestHosts.Controllers
             MobileWalletReversal reversal = new()
             {
                 ReversalReference = Guid.NewGuid().ToString("N"),
-                ClientId = authResult.client.ClientId,
+                ClientId = authResult.client!.ClientId,
                 OriginalTransactionReference = request.originalTransactionReference,
                 Reason = request.reversalReason,
                 IdempotencyKey = idempotencyKey,
@@ -466,7 +466,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("reversal",
                                                 reversal.ReversalReference,
                                                 "create",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 idempotencyKey,
                                                 requestPayload,
@@ -479,7 +479,7 @@ namespace TestHosts.Controllers
         [HttpGet("reversals/{reversalReference}")]
         public async Task<IActionResult> GetReversal(String reversalReference, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -495,7 +495,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("reversal",
                                                 reversal.ReversalReference,
                                                 "view",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 null,
@@ -508,7 +508,7 @@ namespace TestHosts.Controllers
         [HttpPost("webhooks/subscriptions")]
         public async Task<IActionResult> CreateWebhookSubscription([FromBody] CreateMobileWalletWebhookSubscriptionRequest request, CancellationToken cancellationToken)
         {
-            (MobileWalletClient client, IActionResult errorResult) authResult = await this.RequireClientAsync(cancellationToken);
+            var authResult = await this.RequireClientAsync(cancellationToken);
             if (authResult.errorResult != null)
             {
                 return authResult.errorResult;
@@ -522,7 +522,7 @@ namespace TestHosts.Controllers
             MobileWalletWebhookSubscription subscription = new()
             {
                 SubscriptionId = Guid.NewGuid(),
-                ClientId = authResult.client.ClientId,
+                ClientId = authResult.client!.ClientId,
                 EventType = String.IsNullOrWhiteSpace(request.eventType) ? "*" : request.eventType,
                 CallbackUrl = request.callbackUrl,
                 IsActive = true,
@@ -543,7 +543,7 @@ namespace TestHosts.Controllers
             await this.Service.RecordAuditAsync("webhook_subscription",
                                                 subscription.SubscriptionId.ToString("N"),
                                                 "create",
-                                                authResult.client.ClientId,
+                                                authResult.client!.ClientId,
                                                 this.HttpContext,
                                                 null,
                                                 JsonConvert.SerializeObject(request),
@@ -643,6 +643,18 @@ namespace TestHosts.Controllers
             return String.IsNullOrWhiteSpace(currency) == false &&
                    currency.Length == 3 &&
                    currency.All(Char.IsLetter);
+        }
+
+        private static readonly String[] SupportedTransactionStatuses = new[] {
+            MobileWalletStatus.Pending,
+            MobileWalletStatus.Completed,
+            MobileWalletStatus.Failed,
+            MobileWalletStatus.Rejected
+        };
+
+        private Boolean IsSupportedTransactionStatus(String transactionStatus)
+        {
+            return SupportedTransactionStatuses.Contains(transactionStatus, StringComparer.Ordinal);
         }
 
         private Object MapAccount(MobileWalletAccount account)

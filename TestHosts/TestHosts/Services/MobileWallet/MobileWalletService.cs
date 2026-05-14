@@ -15,6 +15,11 @@ namespace TestHosts.Services.MobileWallet
 
     public sealed class MobileWalletService
     {
+        private const Int32 PendingBatchSize = 25;
+        private const Int32 MaxWebhookAttempts = 5;
+        private const Int32 WebhookRetryDelaySeconds = 30;
+        private const Decimal TestAsyncAmountLimit = 50000m;
+
         private readonly MobileWalletContext Context;
         private readonly IConfiguration Configuration;
         private readonly IHttpClientFactory HttpClientFactory;
@@ -117,14 +122,14 @@ namespace TestHosts.Services.MobileWallet
 
         public async Task FinalizeTransactionAsync(MobileWalletTransaction transaction, String targetStatus, String? statusMessage, CancellationToken cancellationToken)
         {
-            if (transaction.Status != "pending" && transaction.Status != targetStatus)
+            if (transaction.Status != MobileWalletStatus.Pending && transaction.Status != targetStatus)
             {
                 return;
             }
 
             switch (targetStatus)
             {
-                case "completed":
+                case MobileWalletStatus.Completed:
                     await this.ApplyTransactionAsync(transaction, cancellationToken);
                     await this.RecordAuditAsync("transaction",
                                                 transaction.TransactionReference,
@@ -140,8 +145,8 @@ namespace TestHosts.Services.MobileWallet
                                                 }),
                                                 cancellationToken);
                     break;
-                case "failed":
-                case "rejected":
+                case MobileWalletStatus.Failed:
+                case MobileWalletStatus.Rejected:
                     transaction.Status = targetStatus;
                     transaction.StatusMessage = statusMessage ?? "Transaction rejected by the test mobile wallet.";
                     transaction.CompletedAt = DateTime.UtcNow;
@@ -177,30 +182,30 @@ namespace TestHosts.Services.MobileWallet
 
         public async Task ProcessPendingTransactionsAsync(CancellationToken cancellationToken)
         {
-            List<MobileWalletTransaction> pendingTransactions = await this.Context.Transactions.Where(t => t.Status == "pending")
+            List<MobileWalletTransaction> pendingTransactions = await this.Context.Transactions.Where(t => t.Status == MobileWalletStatus.Pending)
                                                                                                .OrderBy(t => t.CreatedAt)
-                                                                                               .Take(25)
+                                                                                               .Take(PendingBatchSize)
                                                                                                .ToListAsync(cancellationToken);
 
             foreach (MobileWalletTransaction transaction in pendingTransactions)
             {
-                await this.FinalizeTransactionAsync(transaction, "completed", null, cancellationToken);
+                await this.FinalizeTransactionAsync(transaction, MobileWalletStatus.Completed, null, cancellationToken);
             }
         }
 
         public async Task FinalizeReversalAsync(MobileWalletReversal reversal, String targetStatus, String? statusMessage, CancellationToken cancellationToken)
         {
-            if (reversal.Status != "pending" && reversal.Status != targetStatus)
+            if (reversal.Status != MobileWalletStatus.Pending && reversal.Status != targetStatus)
             {
                 return;
             }
 
-            if (targetStatus == "completed")
+            if (targetStatus == MobileWalletStatus.Completed)
             {
                 MobileWalletTransaction? originalTransaction = await this.Context.Transactions.SingleOrDefaultAsync(t => t.TransactionReference == reversal.OriginalTransactionReference, cancellationToken);
-                if (originalTransaction == null || originalTransaction.BalanceApplied == false || originalTransaction.Status != "completed")
+                if (originalTransaction == null || originalTransaction.BalanceApplied == false || originalTransaction.Status != MobileWalletStatus.Completed)
                 {
-                    reversal.Status = "failed";
+                    reversal.Status = MobileWalletStatus.Failed;
                     reversal.StatusMessage = "Original transaction cannot be reversed.";
                 }
                 else
@@ -210,7 +215,7 @@ namespace TestHosts.Services.MobileWallet
 
                     if (debitAccount == null || creditAccount == null || creditAccount.AvailableBalance < originalTransaction.Amount)
                     {
-                        reversal.Status = "failed";
+                        reversal.Status = MobileWalletStatus.Failed;
                         reversal.StatusMessage = "Insufficient funds to process the reversal.";
                     }
                     else
@@ -219,10 +224,10 @@ namespace TestHosts.Services.MobileWallet
                         debitAccount.AvailableBalance += originalTransaction.Amount;
                         creditAccount.UpdatedAt = DateTime.UtcNow;
                         debitAccount.UpdatedAt = DateTime.UtcNow;
-                        originalTransaction.Status = "reversed";
+                        originalTransaction.Status = MobileWalletStatus.Reversed;
                         originalTransaction.StatusMessage = "Transaction reversed successfully.";
                         originalTransaction.UpdatedAt = DateTime.UtcNow;
-                        reversal.Status = "completed";
+                        reversal.Status = MobileWalletStatus.Completed;
                         reversal.StatusMessage = statusMessage ?? "Reversal completed successfully.";
                     }
                 }
@@ -266,24 +271,24 @@ namespace TestHosts.Services.MobileWallet
 
         public async Task ProcessPendingReversalsAsync(CancellationToken cancellationToken)
         {
-            List<MobileWalletReversal> pendingReversals = await this.Context.Reversals.Where(r => r.Status == "pending")
+            List<MobileWalletReversal> pendingReversals = await this.Context.Reversals.Where(r => r.Status == MobileWalletStatus.Pending)
                                                                                       .OrderBy(r => r.CreatedAt)
-                                                                                      .Take(25)
+                                                                                      .Take(PendingBatchSize)
                                                                                       .ToListAsync(cancellationToken);
 
             foreach (MobileWalletReversal reversal in pendingReversals)
             {
-                await this.FinalizeReversalAsync(reversal, "completed", null, cancellationToken);
+                await this.FinalizeReversalAsync(reversal, MobileWalletStatus.Completed, null, cancellationToken);
             }
         }
 
         public async Task DeliverPendingWebhooksAsync(CancellationToken cancellationToken)
         {
-            List<MobileWalletWebhookDelivery> deliveries = await this.Context.WebhookDeliveries.Where(d => d.Status == "pending" &&
-                                                                                                           (d.LastAttemptAt == null || d.LastAttemptAt <= DateTime.UtcNow.AddSeconds(-30)) &&
-                                                                                                           d.AttemptCount < 5)
+            List<MobileWalletWebhookDelivery> deliveries = await this.Context.WebhookDeliveries.Where(d => d.Status == MobileWalletStatus.Pending &&
+                                                                                                           (d.LastAttemptAt == null || d.LastAttemptAt <= DateTime.UtcNow.AddSeconds(-WebhookRetryDelaySeconds)) &&
+                                                                                                           d.AttemptCount < MaxWebhookAttempts)
                                                                                                .OrderBy(d => d.CreatedAt)
-                                                                                               .Take(25)
+                                                                                               .Take(PendingBatchSize)
                                                                                                .ToListAsync(cancellationToken);
 
             foreach (MobileWalletWebhookDelivery delivery in deliveries)
@@ -329,27 +334,27 @@ namespace TestHosts.Services.MobileWallet
 
             if (debitAccount == null || creditAccount == null)
             {
-                transaction.Status = "failed";
+                transaction.Status = MobileWalletStatus.Failed;
                 transaction.StatusMessage = "One or more transaction accounts were not found.";
             }
-            else if (debitAccount.Status != "active" || creditAccount.Status != "active")
+            else if (debitAccount.Status != MobileWalletStatus.Active || creditAccount.Status != MobileWalletStatus.Active)
             {
-                transaction.Status = "failed";
+                transaction.Status = MobileWalletStatus.Failed;
                 transaction.StatusMessage = "Both accounts must be active before a transaction can complete.";
             }
             else if (debitAccount.Currency != transaction.Currency || creditAccount.Currency != transaction.Currency)
             {
-                transaction.Status = "failed";
+                transaction.Status = MobileWalletStatus.Failed;
                 transaction.StatusMessage = "Transaction currency must match both wallet account currencies.";
             }
             else if (debitAccount.AvailableBalance < transaction.Amount)
             {
-                transaction.Status = "failed";
+                transaction.Status = MobileWalletStatus.Failed;
                 transaction.StatusMessage = "Insufficient balance on the debit account.";
             }
-            else if (transaction.Amount >= 50000)
+            else if (transaction.Amount >= TestAsyncAmountLimit)
             {
-                transaction.Status = "failed";
+                transaction.Status = MobileWalletStatus.Failed;
                 transaction.StatusMessage = "Amounts above the asynchronous test limit are rejected.";
             }
             else
@@ -363,7 +368,7 @@ namespace TestHosts.Services.MobileWallet
                     transaction.BalanceApplied = true;
                 }
 
-                transaction.Status = "completed";
+                transaction.Status = MobileWalletStatus.Completed;
                 transaction.StatusMessage = "Transaction completed successfully.";
             }
 
@@ -423,7 +428,7 @@ namespace TestHosts.Services.MobileWallet
                     ResourceReference = resourceReference,
                     CallbackUrl = targetUrl,
                     Payload = payloadJson,
-                    Status = "pending",
+                    Status = MobileWalletStatus.Pending,
                     CreatedAt = DateTime.UtcNow
                 }, cancellationToken);
             }
