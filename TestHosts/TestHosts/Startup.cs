@@ -121,7 +121,12 @@ public sealed class DatabaseInitializerHostedService : IHostedService
             //}
 
             MobileWalletContext mobileWalletContext = scope.ServiceProvider.GetRequiredService<MobileWalletContext>();
-            await mobileWalletContext.Database.EnsureCreatedAsync(cancellationToken);
+            if (mobileWalletContext.Database.IsRelational()) {
+                await mobileWalletContext.Database.MigrateAsync(cancellationToken);
+            }
+            else {
+                await mobileWalletContext.Database.EnsureCreatedAsync(cancellationToken);
+            }
 
             MobileWalletService mobileWalletService = scope.ServiceProvider.GetRequiredService<MobileWalletService>();
             await mobileWalletService.EnsureSeedDataAsync(cancellationToken);
