@@ -31,7 +31,6 @@ namespace TestHosts
         protected override async Task ExecuteAsync(CancellationToken stoppingToken){
             while (stoppingToken.IsCancellationRequested == false){
                 try {
-                    // TODO: may introduce a date filter
                     using ResolvedDbContext<PataPawaContext>? resolvedContext = this.Resolver.Resolve("PataPawaReadModel");
 
                     var pendingTransactions = await resolvedContext.Context.Transactions.Where(t => t.IsPending).OrderBy(t => t.Date).ToListAsync(stoppingToken);
@@ -106,18 +105,12 @@ public sealed class DatabaseInitializerHostedService : IHostedService
                 // Example: apply migrations or seed data
                 await pataPawaContext.Database.MigrateAsync(cancellationToken);
             }
-            //else {
-            //    await pataPawaContext.Database.EnsureCreatedAsync(cancellationToken);
-            //}
-
+            
             TestBankContext bankContext = scope.ServiceProvider.GetRequiredService<TestBankContext>();
             if (bankContext.Database.IsRelational()) {
                 await bankContext.Database.MigrateAsync(cancellationToken);
             }
-            //else {
-            //    await bankContext.Database.EnsureCreatedAsync(cancellationToken);
-            //}
-
+            
             Logger.LogWarning("Database initialization completed successfully.");
         }
         catch (Exception ex)
