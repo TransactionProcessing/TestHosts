@@ -27,4 +27,4 @@ jobs:
 
     - name: Run Integration Tests
       run: |
-        dotnet test "TestHosts.IntegrationTests\TestHosts.IntegrationTests.csproj"
+        dotnet test "TestHosts\TestHosts.IntegrationTests\TestHosts.IntegrationTests.csproj"
