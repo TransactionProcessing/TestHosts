@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="ClientProxyBase" Version="2026.5.7" />
+		<PackageReference Include="Shared.Results" Version="2026.5.7" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\TestHosts.DataTransferObjects\TestHosts.DataTransferObjects.csproj" />
+	</ItemGroup>
+
+</Project>
