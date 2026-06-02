@@ -5,12 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Shared.Logger;
-using TestHosts.Database.PataPawa;
+using TestHosts.AgencyBanking.Database;
 using TestHosts.Database.TestBank;
+using TestHosts.PataPawa.Database;
 
 namespace TestHosts
 {
-    using Database.PataPawa;
     using Microsoft.EntityFrameworkCore;
     using Shared.EntityFramework;
     using System;
@@ -37,7 +37,7 @@ namespace TestHosts
 
                     if (pendingTransactions.Any()) {
                         // Process the pending transactions
-                        foreach (Transaction pendingTransaction in pendingTransactions) {
+                        foreach (PataPawa.Database.Transaction pendingTransaction in pendingTransactions) {
 
                             PrePayMeter meter = await resolvedContext.Context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
 
@@ -110,7 +110,13 @@ public sealed class DatabaseInitializerHostedService : IHostedService
             if (bankContext.Database.IsRelational()) {
                 await bankContext.Database.MigrateAsync(cancellationToken);
             }
-            
+
+            AgencyBankingDbContext agencyBankContext = scope.ServiceProvider.GetRequiredService<AgencyBankingDbContext>();
+            if (agencyBankContext.Database.IsRelational())
+            {
+                await agencyBankContext.Database.MigrateAsync(cancellationToken);
+            }
+
             Logger.LogWarning("Database initialization completed successfully.");
         }
         catch (Exception ex)

@@ -28,12 +28,18 @@ using Newtonsoft.Json.Serialization;
 using Sentry.Extensibility;
 using Shared.Logger.TennantContext;
 using TestHosts;
+using TestHosts.AgencyBanking.Database;
+using TestHosts.AgencyBanking.Endpoints;
+using TestHosts.AgencyBanking.Services;
 using TestHosts.Common;
-using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
-using TestHosts.SoapServices;
+using TestHosts.Endpoints;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using TestHosts.PataPawa.SoapServices;
+using TestHosts.PataPawa.Database;
+using TestHosts.PataPawa;
+using TestHosts.PataPawa.Endpoints;
 
 
 try {
@@ -108,6 +114,7 @@ try {
     if (builder.Environment.IsEnvironment("IntegrationTest") || builder.Configuration.GetValue<Boolean>("ServiceOptions:UseInMemoryDatabase") == true) {
         builder.Services.AddDbContext<TestBankContext>(builder => builder.UseInMemoryDatabase(Constants.TestBankReadModelConfig));
         builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseInMemoryDatabase(Constants.PataPawaReadModelConfig));
+        builder.Services.AddDbContext<AgencyBankingDbContext>(builder => builder.UseInMemoryDatabase(Constants.AgencyBankingReadModelConfig));
 
     }
     else {
@@ -116,10 +123,20 @@ try {
 
         String pataPawaConnectionString = ConfigurationReader.GetConnectionString(Constants.PataPawaReadModelConfig);
         builder.Services.AddDbContext<PataPawaContext>(builder => builder.UseSqlServer(pataPawaConnectionString));
+
+        String agencyBankingConnectionString = ConfigurationReader.GetConnectionString(Constants.AgencyBankingReadModelConfig);
+        builder.Services.AddDbContext<AgencyBankingDbContext>(builder => builder.UseSqlServer(agencyBankingConnectionString));
     }
 
     builder.Services.AddScoped<TenantContext>(x => new TenantContext());
     builder.Services.AddSingleton<PataPawaPostPayService>();
+    // Agency banking core services
+    builder.Services.AddScoped<IFloatService, FloatService>();
+    builder.Services.AddScoped<ILedgerService, LedgerService>();
+    builder.Services.AddScoped<INotificationService, NotificationService>();
+    builder.Services.AddScoped<IAuditService, AuditService>();
+    builder.Services.AddScoped<ISettlementService, SettlementService>();
+    builder.Services.AddScoped<ITransactionService, TransactionService>();
     // Add your background hosted service
     builder.Services.AddHostedService<PendingPrePaymentProcessor>(provider => {
         IDbContextResolver<PataPawaContext> contextResolver = provider.GetRequiredService<IDbContextResolver<PataPawaContext>>();
@@ -132,6 +149,9 @@ try {
     builder.Services.AddScoped<TenantContext>(x => new TenantContext());
     builder.Services.AddSingleton<PataPawaPostPayService>();
     builder.Services.AddMvc();
+
+    // Add authorization services so AuthorizationMiddleware can be constructed
+    builder.Services.AddAuthorization();
 
     builder.Services.AddServiceModelServices().AddServiceModelMetadata();
     builder.Services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
@@ -172,10 +192,25 @@ try {
 
     app.UseRouting();
 
+    // Authorization middleware requires AddAuthorization() to be registered above
+    app.UseAuthorization();
+
     // ----------------------------------------------------------------------
     // Endpoints
     // ----------------------------------------------------------------------
     app.MapControllers();
+
+    // Map PataPawa minimal API endpoints implemented in PataPawaPrePaidEndpoints
+    app.MapPataPawaPrepayEndpoints();
+    // Map developer minimal API endpoints
+    app.MapPataPawaDeveloperEndpoints();
+
+    // Agency Banking
+    app.MapStaticQueryEndpoints();
+    app.MapAgencyBankingSystemSetupEndpoints();
+    app.MapAgencyBankingAccountEndpoints();
+    app.MapAgencyBankingAuthenticationEndpoints();
+    app.MapAgencyBankingTransactionEndpoints();
 
     app.MapHealthChecks("health", new HealthCheckOptions { Predicate = _ => true, ResponseWriter = Shared.HealthChecks.HealthCheckMiddleware.WriteResponse });
 
@@ -208,4 +243,5 @@ finally {
 public static class Constants {
     public static readonly String PataPawaReadModelConfig = "PataPawaReadModel";
     public static readonly String TestBankReadModelConfig = "TestBankReadModel";
+    public static readonly String AgencyBankingReadModelConfig = "AgencyBankingReadModel";
 }

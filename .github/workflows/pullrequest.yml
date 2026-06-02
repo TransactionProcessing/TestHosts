@@ -24,3 +24,7 @@ jobs:
 
     - name: Build Docker Image
       run: docker build ./TestHosts --file TestHosts/TestHosts/Dockerfile --tag testhosts:latest
+
+    - name: Run Integration Tests
+      run: |
+        dotnet test "TestHosts\TestHosts.IntegrationTests\TestHosts.IntegrationTests.csproj"
