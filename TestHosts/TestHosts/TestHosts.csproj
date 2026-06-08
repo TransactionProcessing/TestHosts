@@ -43,11 +43,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="PataPawa\Controllers\" />
-    <Folder Include="TestBank\Database\Migrations\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\TestHosts.DataTransferObjects\TestHosts.DataTransferObjects.csproj" />
   </ItemGroup>
 

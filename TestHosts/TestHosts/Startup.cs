@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Shared.Logger;
 using TestHosts.AgencyBanking.Database;
+using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
-using TestHosts.PataPawa.Database;
 
 namespace TestHosts
 {
@@ -37,7 +37,7 @@ namespace TestHosts
 
                     if (pendingTransactions.Any()) {
                         // Process the pending transactions
-                        foreach (PataPawa.Database.Transaction pendingTransaction in pendingTransactions) {
+                        foreach (Transaction pendingTransaction in pendingTransactions) {
 
                             PrePayMeter meter = await resolvedContext.Context.PrePayMeters.SingleAsync(m => m.MeterNumber == pendingTransaction.MeterNumber, stoppingToken);
 

@@ -32,15 +32,12 @@ using TestHosts.AgencyBanking.Database;
 using TestHosts.AgencyBanking.Endpoints;
 using TestHosts.AgencyBanking.Services;
 using TestHosts.Common;
+using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
 using TestHosts.Endpoints;
+using TestHosts.SoapServices;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
-using TestHosts.PataPawa.SoapServices;
-using TestHosts.PataPawa.Database;
-using TestHosts.PataPawa;
-using TestHosts.PataPawa.Endpoints;
-
 
 try {
 
@@ -201,9 +198,9 @@ try {
     app.MapControllers();
 
     // Map PataPawa minimal API endpoints implemented in PataPawaPrePaidEndpoints
-    app.MapPataPawaPrepayEndpoints();
+    //app.MapPataPawaPrepayEndpoints();
     // Map developer minimal API endpoints
-    app.MapPataPawaDeveloperEndpoints();
+    //app.MapPataPawaDeveloperEndpoints();
 
     // Agency Banking
     app.MapStaticQueryEndpoints();

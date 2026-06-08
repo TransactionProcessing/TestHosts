@@ -10,8 +10,6 @@ using TestHosts.AgencyBanking.Database;
 using TestHosts.AgencyBanking.Database.Entities;
 using TestHosts.AgencyBanking.Services;
 using TestHosts.DataTransferObjects.AgencyBanking;
-using TestHosts.PataPawa.Database;
-using TestHosts.PataPawa.Handlers;
 
 namespace TestHosts.AgencyBanking.Endpoints
 {

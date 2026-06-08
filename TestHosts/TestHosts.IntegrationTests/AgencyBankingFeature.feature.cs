@@ -457,7 +457,7 @@ await this.FeatureBackgroundAsync();
     await testRunner.AndAsync("the customer account \"100200300\" balance should be 5000", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 123
-    await testRunner.AndAsync("the agent \"AGT001\" float balance should be 45000", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the agent \"AGT001\" float balance should be 5000", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
