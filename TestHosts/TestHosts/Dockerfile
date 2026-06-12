@@ -5,6 +5,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["TestHosts/TestHosts.csproj", "TestHosts/"]
 COPY ["TestHosts/NuGet.Config", "TestHosts/"]
+COPY ["Directory.Packages.props", "."]
+COPY . .
 RUN dotnet restore "TestHosts/TestHosts.csproj"
 COPY . .
 WORKDIR "/src/TestHosts"

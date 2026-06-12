@@ -7,15 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Shared.IntegrationTesting" Version="2026.5.5" />
-	  <PackageReference Include="NUnit" Version="4.5.1" />
-	  <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
-	  <PackageReference Include="Reqnroll.NUnit" Version="3.3.3" />
-	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-	  <PackageReference Include="Reqnroll" Version="3.3.3" />
-	  <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" Version="3.3.3" />
-	  <PackageReference Include="Shouldly" Version="4.3.0" />
-	  <PackageReference Include="coverlet.collector" Version="8.0.0">
+	  <PackageReference Include="Shared.IntegrationTesting" />
+	  <PackageReference Include="NUnit" />
+	  <PackageReference Include="NUnit3TestAdapter" />
+	  <PackageReference Include="Reqnroll.NUnit" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+	  <PackageReference Include="Reqnroll" />
+	  <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" />
+	  <PackageReference Include="Shouldly" />
+	  <PackageReference Include="coverlet.collector">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
