@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+	<!-- Enable centralized package management -->
+	<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	<!-- Ensure SDK-style projects restore correctly -->
+	<RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+  </PropertyGroup>
+</Project>

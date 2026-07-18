@@ -14,8 +14,8 @@
 		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeP2PAssets</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="ClientProxyBase" Version="2026.5.7" />
-		<PackageReference Include="Shared.Results" Version="2026.5.7" />
+		<PackageReference Include="ClientProxyBase" />
+		<PackageReference Include="Shared.Results" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\TestHosts.DataTransferObjects\TestHosts.DataTransferObjects.csproj" PrivateAssets="All"/>
