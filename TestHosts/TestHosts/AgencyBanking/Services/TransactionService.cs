@@ -329,7 +329,7 @@ namespace TestHosts.AgencyBanking.Services {
             var account = await _db.Accounts.SingleOrDefaultAsync(x => x.AccountNumber == request.AccountNumber);
 
             if (account == null) {
-                return Result.Failure(ResponseCodes.InvalidAccount.ToString());
+                return Result.Failure([((Int32)ResponseCodes.InvalidAccount).ToString(), $"No account found with number [{request.AccountNumber}]"]);
             }
 
             return Result.Success(new BalanceEnquiryResult { ResponseCode = "00", ResponseMessage = "Success", AvailableBalance = account.Balance });

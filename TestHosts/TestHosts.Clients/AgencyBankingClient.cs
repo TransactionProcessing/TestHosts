@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using TestHosts.DataTransferObjects.AgencyBanking;
 
-namespace TestHosts.IntegrationTests
+namespace TestHosts.Clients
 {
     public interface IAgencyBankingClient
     {

@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using Shared.IntegrationTesting.TestContainers;
+using TestHosts.Clients;
 
 namespace TestHosts.IntegrationTests
 {
