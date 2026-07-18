@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TestHosts.Clients\TestHosts.Clients.csproj" />
+    <ProjectReference Include="..\TestHosts.DataTransferObjects\TestHosts.DataTransferObjects.csproj" />
   </ItemGroup>
 
   <ItemGroup>
