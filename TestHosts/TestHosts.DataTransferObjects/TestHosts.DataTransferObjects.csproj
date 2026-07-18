@@ -4,6 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>TestHosts.DataTransferObjects</PackageId>
+    <Description>DTOs shared by the TestHosts Agency Banking client and test host.</Description>
+    <PackageTags>agency-banking;dto;testhosts</PackageTags>
+    <Authors>TransactionProcessing</Authors>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
