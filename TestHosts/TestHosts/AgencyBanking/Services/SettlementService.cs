@@ -60,6 +60,9 @@ public class SettlementService : ISettlementService
     public async Task RecordSettlement(
         SettlementRecord record)
     {
+        AgencyBankingServiceLogging.Started(
+            "RecordSettlement",
+            $"transactionId={record.TransactionId} agentId={record.AgentId} amount={record.Amount}");
         _db.SettlementRecords.Add(record);
 
         await _audit.Log(
@@ -68,6 +71,10 @@ public class SettlementService : ISettlementService
             "SUCCESS");
 
         await _db.SaveChangesAsync();
+
+        AgencyBankingServiceLogging.Completed(
+            "RecordSettlement",
+            $"transactionId={record.TransactionId} agentId={record.AgentId} amount={record.Amount}");
     }
 
     // ========================================================
@@ -78,6 +85,9 @@ public class SettlementService : ISettlementService
         RunEndOfDaySettlement(
             DateTime settlementDate)
     {
+        AgencyBankingServiceLogging.Started(
+            "RunEndOfDaySettlement",
+            $"settlementDate={settlementDate:o}");
         var batchId =
             Guid.NewGuid().ToString();
 
@@ -91,6 +101,10 @@ public class SettlementService : ISettlementService
 
         if (!pending.Any())
         {
+            AgencyBankingServiceLogging.Warn(
+                "RunEndOfDaySettlement",
+                "no pending settlements",
+                $"settlementDate={settlementDate:o}");
             return FailedBatch(
                 batchId,
                 "No pending settlements");
@@ -178,6 +192,9 @@ public class SettlementService : ISettlementService
 
             await _db.SaveChangesAsync();
 
+            AgencyBankingServiceLogging.Completed(
+                "RunEndOfDaySettlement",
+                $"settlementDate={settlementDate:o} batchId={batchId} totalTransactions={successCount} totalAmount={totalAmount}");
             return new SettlementBatchResult
             {
                 Success = true,
@@ -190,6 +207,10 @@ public class SettlementService : ISettlementService
         }
         catch (Exception ex)
         {
+            AgencyBankingServiceLogging.Failed(
+                "RunEndOfDaySettlement",
+                ex,
+                $"settlementDate={settlementDate:o} batchId={batchId}");
             return FailedBatch(
                 batchId,
                 ex.Message);
@@ -205,6 +226,9 @@ public class SettlementService : ISettlementService
             string agentId,
             DateTime settlementDate)
     {
+        AgencyBankingServiceLogging.Started(
+            "RunAgentSettlement",
+            $"agentId={agentId} settlementDate={settlementDate:o}");
         var records =
             await _db.SettlementRecords
                 .Where(x =>
@@ -214,6 +238,10 @@ public class SettlementService : ISettlementService
 
         if (!records.Any())
         {
+            AgencyBankingServiceLogging.Warn(
+                "RunAgentSettlement",
+                "no pending agent settlements",
+                $"agentId={agentId} settlementDate={settlementDate:o}");
             return FailedBatch(
                 "",
                 "No pending agent settlements");
@@ -253,6 +281,9 @@ public class SettlementService : ISettlementService
 
             await _db.SaveChangesAsync();
 
+            AgencyBankingServiceLogging.Completed(
+                "RunAgentSettlement",
+                $"agentId={agentId} settlementDate={settlementDate:o} totalTransactions={records.Count} totalAmount={total}");
             return new SettlementBatchResult
             {
                 Success = true,
@@ -268,6 +299,10 @@ public class SettlementService : ISettlementService
         }
         catch (Exception ex)
         {
+            AgencyBankingServiceLogging.Failed(
+                "RunAgentSettlement",
+                ex,
+                $"agentId={agentId} settlementDate={settlementDate:o}");
             return FailedBatch(
                 "",
                 ex.Message);
@@ -281,6 +316,8 @@ public class SettlementService : ISettlementService
     public async Task<List<SettlementRecord>>
         GetPendingSettlements()
     {
+        AgencyBankingServiceLogging.Started(
+            "GetPendingSettlements");
         return await _db.SettlementRecords
             .Where(x =>
                 x.SettlementStatus == "PENDING")
@@ -297,6 +334,9 @@ public class SettlementService : ISettlementService
         GetSettlementSummary(
             DateTime settlementDate)
     {
+        AgencyBankingServiceLogging.Started(
+            "GetSettlementSummary",
+            $"settlementDate={settlementDate:o}");
         var records =
             await _db.SettlementRecords
                 .Where(x =>
@@ -304,7 +344,7 @@ public class SettlementService : ISettlementService
                     settlementDate.Date)
                 .ToListAsync();
 
-        return new SettlementSummary
+        SettlementSummary summary = new SettlementSummary
         {
             SettlementDate =
                 settlementDate,
@@ -332,7 +372,7 @@ public class SettlementService : ISettlementService
                     .Sum(x =>
                         x.Amount),
 
-            TotalReversals =
+                TotalReversals =
                 records
                     .Where(x =>
                         x.TransactionType ==
@@ -340,6 +380,11 @@ public class SettlementService : ISettlementService
                     .Sum(x =>
                         x.Amount)
         };
+
+        AgencyBankingServiceLogging.Completed(
+            "GetSettlementSummary",
+            $"settlementDate={settlementDate:o} totalTransactions={records.Count} totalAmount={records.Sum(x => x.Amount)}");
+        return summary;
     }
 
     // ========================================================
@@ -349,6 +394,9 @@ public class SettlementService : ISettlementService
     public async Task ReverseSettlement(
         string transactionId)
     {
+        AgencyBankingServiceLogging.Started(
+            "ReverseSettlement",
+            $"transactionId={transactionId}");
         var settlement =
             await _db.SettlementRecords
                 .FirstOrDefaultAsync(x =>
@@ -357,6 +405,10 @@ public class SettlementService : ISettlementService
 
         if (settlement == null)
         {
+            AgencyBankingServiceLogging.Warn(
+                "ReverseSettlement",
+                "settlement not found",
+                $"transactionId={transactionId}");
             throw new Exception(
                 "Settlement Not Found");
         }
@@ -387,6 +439,10 @@ public class SettlementService : ISettlementService
             "SUCCESS");
 
         await _db.SaveChangesAsync();
+
+        AgencyBankingServiceLogging.Completed(
+            "ReverseSettlement",
+            $"transactionId={transactionId}");
     }
 
     // ========================================================
@@ -396,6 +452,9 @@ public class SettlementService : ISettlementService
     public async Task ReconcileSettlement(
         DateTime settlementDate)
     {
+        AgencyBankingServiceLogging.Started(
+            "ReconcileSettlement",
+            $"settlementDate={settlementDate:o}");
         var settlements =
             await _db.SettlementRecords
                 .Where(x =>
@@ -417,6 +476,10 @@ public class SettlementService : ISettlementService
 
         if (ledgerTotal != settlementTotal)
         {
+            AgencyBankingServiceLogging.Warn(
+                "ReconcileSettlement",
+                "reconciliation mismatch",
+                $"settlementDate={settlementDate:o} ledgerTotal={ledgerTotal} settlementTotal={settlementTotal}");
             await _audit.Log(
                 Guid.NewGuid().ToString(),
                 "SETTLEMENT_RECON_FAILED",
@@ -430,6 +493,10 @@ public class SettlementService : ISettlementService
             Guid.NewGuid().ToString(),
             "SETTLEMENT_RECON_SUCCESS",
             "SUCCESS");
+
+        AgencyBankingServiceLogging.Completed(
+            "ReconcileSettlement",
+            $"settlementDate={settlementDate:o} ledgerTotal={ledgerTotal} settlementTotal={settlementTotal}");
     }
 
     // ========================================================

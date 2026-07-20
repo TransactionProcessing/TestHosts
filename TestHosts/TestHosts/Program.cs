@@ -184,6 +184,7 @@ try {
 
     // Custom middleware
     app.UseMiddleware<TenantMiddleware>();
+    app.UseAgencyBankingRequestLogging();
     app.AddRequestResponseLogging();
     app.AddExceptionHandler();
 
