@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using SimpleResults;
@@ -58,12 +59,12 @@ public static class TransactionEndpoints {
         public static async Task<IResult> BalanceEnquiry(BalanceEnquiryRequest request,
                                                               ITransactionService transactionService)
         {
-            var response = await transactionService.ProcessBalanceEnquiry(request);
+            Result<BalanceEnquiryResult> response = await transactionService.ProcessBalanceEnquiry(request);
 
             if (response.IsFailed)
             {
                 // TODO: Translate the response code to a user-friendly message
-                TransactionResponse errorResponse = new();
+                TransactionResponse errorResponse = new() { ResponseMessage = response.Errors.ToArray()[1], ResponseCode = response.Errors.ToArray()[0] };
                 return Results.BadRequest(errorResponse);
             }
 

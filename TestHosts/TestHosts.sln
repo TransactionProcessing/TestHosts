@@ -11,6 +11,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHosts.DataTransferObjec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHosts.Clients", "TestHosts.Clients\TestHosts.Clients.csproj", "{4E96C5C3-9ABD-44B6-9047-64A78BF40B09}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{50B827EF-9E58-48D0-9CD9-6F32B2DF236A}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Packages.props = Directory.Packages.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EE95A101-2EFF-4E8E-A603-1587901B6319}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{208122B0-E9C8-402B-AAA0-354082F8058E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +45,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2AA295CE-3480-4206-A4AE-47112F00BF8F} = {EE95A101-2EFF-4E8E-A603-1587901B6319}
+		{E242FAB3-8F81-43E4-B76A-654F876DB840} = {208122B0-E9C8-402B-AAA0-354082F8058E}
+		{EF0A5414-7D16-486A-A042-790C6768B7F4} = {EE95A101-2EFF-4E8E-A603-1587901B6319}
+		{4E96C5C3-9ABD-44B6-9047-64A78BF40B09} = {EE95A101-2EFF-4E8E-A603-1587901B6319}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B1819E4D-394A-48C4-B9EC-1E7D0B0D4764}

@@ -25,6 +25,9 @@ public class LedgerService : ILedgerService {
                            string creditAccount,
                            decimal amount)
     {
+        AgencyBankingServiceLogging.Started(
+            "PostLedgerEntry",
+            $"transactionId={transactionId} debitAccount={debitAccount} creditAccount={creditAccount} amount={amount}");
         this._db.LedgerEntries.Add(new LedgerEntry
         {
             TransactionId = transactionId,
@@ -35,5 +38,9 @@ public class LedgerService : ILedgerService {
         });
 
         await this._db.SaveChangesAsync();
+
+        AgencyBankingServiceLogging.Completed(
+            "PostLedgerEntry",
+            $"transactionId={transactionId} debitAccount={debitAccount} creditAccount={creditAccount} amount={amount}");
     }
 }

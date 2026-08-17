@@ -22,6 +22,9 @@ namespace TestHosts.AgencyBanking.Services {
                               string action,
                               string status)
         {
+            AgencyBankingServiceLogging.Started(
+                "AuditLog",
+                $"transactionId={transactionId} action={action} status={status}");
             this._db.AuditLogs.Add(new AuditLog
             {
                 TransactionId = transactionId,
@@ -31,6 +34,10 @@ namespace TestHosts.AgencyBanking.Services {
             });
 
             await this._db.SaveChangesAsync();
+
+            AgencyBankingServiceLogging.Completed(
+                "AuditLog",
+                $"transactionId={transactionId} action={action} status={status}");
         }
     }
 }

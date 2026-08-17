@@ -61,21 +61,36 @@ public class FloatService : IFloatService
 
     public async Task<Result> DebitFloat(string agentId, decimal amount,string transactionId, string narrative)
     {
+        AgencyBankingServiceLogging.Started(
+            "DebitFloat",
+            $"agentId={agentId} transactionId={transactionId} amount={amount}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null) {
+            AgencyBankingServiceLogging.Warn(
+                "DebitFloat",
+                "invalid agent",
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.InvalidAgent.ToString());
         }
 
         if (!agent.Active) {
+            AgencyBankingServiceLogging.Warn(
+                "DebitFloat",
+                "agent disabled",
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.AgentDisabled.ToString());
         }
 
         Decimal availableFloat = agent.FloatBalance - agent.ReservedFloat;
 
         if (availableFloat < amount) {
+            AgencyBankingServiceLogging.Warn(
+                "DebitFloat",
+                "insufficient float",
+                $"agentId={agentId} transactionId={transactionId} availableFloat={availableFloat} amount={amount}");
             return Result.Failure(ResponseCodes.InsufficientFloat.ToString());
         }
 
@@ -100,13 +115,20 @@ public class FloatService : IFloatService
             });
 
             await this._audit.Log(transactionId, "FLOAT_DEBIT", "SUCCESS");
-            
+
             await this._db.SaveChangesAsync();
 
+            AgencyBankingServiceLogging.Completed(
+                "DebitFloat",
+                $"agentId={agentId} transactionId={transactionId} balance={closingBalance}");
             return Result.Success();
         }
         catch (Exception ex)
         {
+            AgencyBankingServiceLogging.Failed(
+                "DebitFloat",
+                ex,
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.SystemError.ToString());
         }
     }
@@ -120,11 +142,18 @@ public class FloatService : IFloatService
                                           string transactionId,
                                           string narrative)
     {
+        AgencyBankingServiceLogging.Started(
+            "CreditFloat",
+            $"agentId={agentId} transactionId={transactionId} amount={amount}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null) {
+            AgencyBankingServiceLogging.Warn(
+                "CreditFloat",
+                "invalid agent",
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.InvalidAgent.ToString());
         }
 
@@ -155,10 +184,17 @@ public class FloatService : IFloatService
 
             await this._db.SaveChangesAsync();
                         
+            AgencyBankingServiceLogging.Completed(
+                "CreditFloat",
+                $"agentId={agentId} transactionId={transactionId} balance={closingBalance}");
             return Result.Success();
         }
         catch (Exception ex)
         {
+            AgencyBankingServiceLogging.Failed(
+                "CreditFloat",
+                ex,
+                $"agentId={agentId} transactionId={transactionId}");
 
             return Result.Failure(ResponseCodes.SystemError.ToString());
         }
@@ -172,12 +208,19 @@ public class FloatService : IFloatService
                                            decimal amount,
                                            string transactionId)
     {
+        AgencyBankingServiceLogging.Started(
+            "ReserveFloat",
+            $"agentId={agentId} transactionId={transactionId} amount={amount}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null)
         {
+            AgencyBankingServiceLogging.Warn(
+                "ReserveFloat",
+                "invalid agent",
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.InvalidAgent.ToString());
         }
 
@@ -186,6 +229,10 @@ public class FloatService : IFloatService
 
         if (available < amount)
         {
+            AgencyBankingServiceLogging.Warn(
+                "ReserveFloat",
+                "insufficient float",
+                $"agentId={agentId} transactionId={transactionId} availableFloat={available} amount={amount}");
             return Result.Failure(ResponseCodes.InsufficientFloat.ToString());
         }
 
@@ -209,10 +256,17 @@ public class FloatService : IFloatService
 
             await this._db.SaveChangesAsync();
 
+            AgencyBankingServiceLogging.Completed(
+                "ReserveFloat",
+                $"agentId={agentId} transactionId={transactionId} reservedFloat={agent.ReservedFloat}");
             return Result.Success();
         }
         catch (Exception ex)
         {            
+            AgencyBankingServiceLogging.Failed(
+                "ReserveFloat",
+                ex,
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.SystemError.ToString());
         }
     }
@@ -226,17 +280,28 @@ public class FloatService : IFloatService
         decimal amount,
         string transactionId)
     {
+        AgencyBankingServiceLogging.Started(
+            "ReleaseReservedFloat",
+            $"agentId={agentId} transactionId={transactionId} amount={amount}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null)
         {
+            AgencyBankingServiceLogging.Warn(
+                "ReleaseReservedFloat",
+                "invalid agent",
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.InvalidAgent.ToString());
         }
 
         if (agent.ReservedFloat < amount)
         {
+            AgencyBankingServiceLogging.Warn(
+                "ReleaseReservedFloat",
+                "insufficient reserved float",
+                $"agentId={agentId} transactionId={transactionId} reservedFloat={agent.ReservedFloat} amount={amount}");
             return Result.Failure(ResponseCodes.InsufficientReservedFloat.ToString());
         }
 
@@ -260,10 +325,17 @@ public class FloatService : IFloatService
 
             await this._db.SaveChangesAsync();
 
+            AgencyBankingServiceLogging.Completed(
+                "ReleaseReservedFloat",
+                $"agentId={agentId} transactionId={transactionId} reservedFloat={agent.ReservedFloat}");
             return Result.Success();
         }
         catch (Exception ex)
         {
+            AgencyBankingServiceLogging.Failed(
+                "ReleaseReservedFloat",
+                ex,
+                $"agentId={agentId} transactionId={transactionId}");
             return Result.Failure(ResponseCodes.SystemError.ToString());
         }
     }
@@ -274,18 +346,32 @@ public class FloatService : IFloatService
 
     public async Task<Result> HasSufficientFloat(string agentId, decimal amount)
     {
+        AgencyBankingServiceLogging.Started(
+            "HasSufficientFloat",
+            $"agentId={agentId} amount={amount}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null)
+        {
+            AgencyBankingServiceLogging.Warn(
+                "HasSufficientFloat",
+                "invalid agent",
+                $"agentId={agentId}");
             return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+        }
 
         var available = agent.FloatBalance - agent.ReservedFloat;
 
-        return available >= amount
+        Result result = available >= amount
             ? Result.Success()
             : Result.Failure(ResponseCodes.InsufficientFloat.ToString());
+
+        AgencyBankingServiceLogging.Completed(
+            "HasSufficientFloat",
+            $"agentId={agentId} amount={amount} availableFloat={available} result={(result.IsFailed ? "failed" : "success")}");
+        return result;
     }
 
     // ========================================================
@@ -295,15 +381,28 @@ public class FloatService : IFloatService
     public async Task<decimal> GetAvailableFloat(
         string agentId)
     {
+        AgencyBankingServiceLogging.Started(
+            "GetAvailableFloat",
+            $"agentId={agentId}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null)
+        {
+            AgencyBankingServiceLogging.Warn(
+                "GetAvailableFloat",
+                "invalid agent",
+                $"agentId={agentId}");
             return 0;
+        }
 
-        return agent.FloatBalance -
+        decimal result = agent.FloatBalance -
                agent.ReservedFloat;
+        AgencyBankingServiceLogging.Completed(
+            "GetAvailableFloat",
+            $"agentId={agentId} availableFloat={result}");
+        return result;
     }
 
     // ========================================================
@@ -313,16 +412,23 @@ public class FloatService : IFloatService
     public async Task<FloatSummary> GetFloatSummary(
         string agentId)
     {
+        AgencyBankingServiceLogging.Started(
+            "GetFloatSummary",
+            $"agentId={agentId}");
         var agent = await this._db.Agents
             .FirstOrDefaultAsync(x =>
                 x.AgentId == agentId);
 
         if (agent == null)
         {
+            AgencyBankingServiceLogging.Warn(
+                "GetFloatSummary",
+                "invalid agent",
+                $"agentId={agentId}");
             return new FloatSummary();
         }
 
-        return new FloatSummary
+        FloatSummary summary = new FloatSummary
         {
             AgentId = agent.AgentId,
             TotalFloat = agent.FloatBalance,
@@ -331,6 +437,11 @@ public class FloatService : IFloatService
                 agent.FloatBalance -
                 agent.ReservedFloat
         };
+
+        AgencyBankingServiceLogging.Completed(
+            "GetFloatSummary",
+            $"agentId={agentId} availableFloat={summary.AvailableFloat}");
+        return summary;
     }
 
     // ========================================================
@@ -342,8 +453,11 @@ public class FloatService : IFloatService
         DateTime fromDate,
         DateTime toDate)
     {
+        AgencyBankingServiceLogging.Started(
+            "GetFloatHistory",
+            $"agentId={agentId} fromDate={fromDate:o} toDate={toDate:o}");
         
-        return await this._db.FloatHistories
+        List<FloatHistory> history = await this._db.FloatHistories
             .Where(x =>
                 x.AgentId == agentId &&
                 x.CreatedAt >= fromDate &&
@@ -361,6 +475,11 @@ public class FloatService : IFloatService
                 OperationType = (FloatOperationType)f.OperationType,
                 TransactionId = f.TransactionId
             }).ToListAsync();
+
+        AgencyBankingServiceLogging.Completed(
+            "GetFloatHistory",
+            $"agentId={agentId} count={history.Count}");
+        return history;
     }
 
     // ========================================================
