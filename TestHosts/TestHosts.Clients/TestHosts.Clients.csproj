@@ -6,8 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="ClientProxyBase" Version="2026.5.7" />
-		<PackageReference Include="Shared.Results" Version="2026.5.7" />
+		<PackageReference Include="ClientProxyBase" Version="2026.8.2" />
+		<PackageReference Include="Shared.Results" Version="2026.8.2" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\TestHosts.DataTransferObjects\TestHosts.DataTransferObjects.csproj" />
