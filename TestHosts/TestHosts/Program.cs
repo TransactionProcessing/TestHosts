@@ -47,7 +47,15 @@ try {
     // Load custom hosting configuration (your existing hosting.json setup)
     // ----------------------------------------------------------------------
     FileInfo fi = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location);
-    builder.Configuration.SetBasePath(fi.Directory!.FullName).AddJsonFile("hosting.json", optional: false, reloadOnChange: true).AddJsonFile("hosting.development.json", optional: true, reloadOnChange: true).AddJsonFile("/home/txnproc/config/appsettings.json", true, true).AddJsonFile($"/home/txnproc/config/appsettings.{builder.Environment.EnvironmentName}.json", optional: true).AddJsonFile("appsettings.json", optional: true, reloadOnChange: true).AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true).AddEnvironmentVariables();
+    builder.Configuration.SetBasePath(fi.Directory!.FullName)
+        .AddJsonFile("hosting.json", optional: false, reloadOnChange: true)
+        .AddJsonFile("hosting.development.json", optional: true, reloadOnChange: true)
+        .AddJsonFile("/home/txnproc/config/appsettings.json", true, true)
+        .AddJsonFile($"/home/txnproc/config/appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+        .AddJsonFile($"/home/txnproc/config/appsettings.local.json", optional: true)
+        .AddEnvironmentVariables();
 
     ConfigurationReader.Initialise(builder.Configuration);
     // ----------------------------------------------------------------------
