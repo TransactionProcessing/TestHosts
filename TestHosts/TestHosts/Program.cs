@@ -2,31 +2,33 @@
 using CoreWCF;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
+using CoreWCF.IdentityModel.Protocols.WSTrust;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using NLog;
 using NLog.Web;
+using Sentry.Extensibility;
 using Shared.EntityFramework;
 using Shared.Extensions;
 using Shared.General;
+using Shared.Logger.TennantContext;
 using Shared.Middleware;
+using Shared.Monitoring;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Security;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using Sentry.Extensibility;
-using Shared.Logger.TennantContext;
 using TestHosts;
 using TestHosts.AgencyBanking.Database;
 using TestHosts.AgencyBanking.Endpoints;
@@ -171,6 +173,8 @@ try {
 
     builder.Services.AddSingleton(config);
 
+    builder.Services.AddUptimeKuma();
+
     // ----------------------------------------------------------------------
     // Build the app
     // ----------------------------------------------------------------------
@@ -229,6 +233,13 @@ try {
 
     ServiceMetadataBehavior metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
     metadataBehavior.HttpGetEnabled = true;
+
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        app.RegisterWithUptimeKumaAsync()
+            .GetAwaiter()
+            .GetResult();
+    });
 
     // ----------------------------------------------------------------------
     // Start the application
