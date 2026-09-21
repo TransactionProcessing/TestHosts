@@ -26,9 +26,11 @@ using Shared.Logger.TennantContext;
 using Shared.Middleware;
 using Shared.Monitoring;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Security;
+using HealthMonitoring.Client;
 using TestHosts;
 using TestHosts.AgencyBanking.Database;
 using TestHosts.AgencyBanking.Endpoints;
@@ -57,7 +59,11 @@ try {
         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
         .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
         .AddJsonFile($"/home/txnproc/config/appsettings.local.json", optional: true)
-        .AddEnvironmentVariables();
+        .AddEnvironmentVariables()
+        .AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["HealthMonitoring:Service:Version"] = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "0.0.0.0"
+        });
 
     ConfigurationReader.Initialise(builder.Configuration);
     // ----------------------------------------------------------------------
@@ -172,9 +178,8 @@ try {
     RequestResponseMiddlewareLoggingConfig config = new RequestResponseMiddlewareLoggingConfig(middlewareLogLevel, logRequests, logResponses);
 
     builder.Services.AddSingleton(config);
-
-    builder.Services.AddUptimeKuma();
-
+    builder.Services.AddHealthMonitoringRegistration(builder.Configuration);
+    
     // ----------------------------------------------------------------------
     // Build the app
     // ----------------------------------------------------------------------
@@ -233,14 +238,7 @@ try {
 
     ServiceMetadataBehavior metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
     metadataBehavior.HttpGetEnabled = true;
-
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        app.RegisterWithUptimeKumaAsync()
-            .GetAwaiter()
-            .GetResult();
-    });
-
+    
     // ----------------------------------------------------------------------
     // Start the application
     // ----------------------------------------------------------------------
