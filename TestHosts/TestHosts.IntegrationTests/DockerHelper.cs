@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using Shared.IntegrationTesting.TestContainers;
 using TestHosts.Clients;
+using System.Threading;
 
 namespace TestHosts.IntegrationTests
 {
@@ -25,9 +26,9 @@ namespace TestHosts.IntegrationTests
             return StringSerialiser.DeserializeObject<Object>(arg, type, new SerialiserOptions(SerialiserPropertyFormat.CamelCase));
         }
 
-        public async Task StartContainersForScenarioRun(String scenarioName, DockerServices dockerServices)
+        public async Task StartContainersForScenarioRun(String scenarioName, DockerServices dockerServices, CancellationToken cancellationToken)
         {
-            await base.StartContainersForScenarioRun(scenarioName, dockerServices);
+            await base.StartContainersForScenarioRun(scenarioName, dockerServices, cancellationToken);
                                    
             Func<String, String> agencyBankingBaseAddressResolver = api => $"http://localhost:{this.TestHostServicePort}";
             HttpClient httpClient = new HttpClient();
@@ -38,7 +39,8 @@ namespace TestHosts.IntegrationTests
 
         
         
-        public override async Task CreateSubscriptions(){
+        public override async Task CreateSubscriptions(CancellationToken cancellationToken)
+        {
             // No subscriptions needed
         }
 
@@ -65,7 +67,7 @@ namespace TestHosts.IntegrationTests
                 .WithName(this.TestHostContainerName)  // similar to WithName()
                 .WithImage(imageDetails.imageName)
                 .WithEnvironment(environmentVariables)
-                .MountHostFolder(this.DockerPlatform, this.HostTraceFolder)
+                .MountHostFolder(this.HostTraceFolder)
                 .WithPortBinding(DockerPorts.TestHostPort, true);
 
             return testHostContainer;
