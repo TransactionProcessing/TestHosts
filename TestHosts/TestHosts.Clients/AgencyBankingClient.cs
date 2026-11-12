@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Shared.Results;
-using SimpleResults;
+using TransactionProcessing.UnionResults;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -22,15 +21,15 @@ namespace TestHosts.Clients
         Task<Result> CreateCustomer(CreateCustomerRequest request, CancellationToken cancellationToken);
 
         // Query methods returning typed results
-        Task<SimpleResults.Result<SystemConfigurationDto>> GetSystemConfiguration(CancellationToken cancellationToken);
-        Task<SimpleResults.Result<GlAccountResponse>> GetGlAccountByCode(string glCode, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<SettlementAccountResponse>> GetSettlementAccountByNumber(string accountNumber, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<SuperAgentResponse>> GetSuperAgentById(string agentId, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<AgentResponse>> GetAgentById(string agentId, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<FloatConfigurationResponse>> GetFloatConfigurationByAgentId(string agentId, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<CustomerResponse>> GetCustomerByAccountNumber(string accountNumber, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<Decimal>> GetCustomerBalance(string accountNumber, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<GoLiveRecordResponse>> GetGoLiveRecord(CancellationToken cancellationToken);
+        Task<Result<SystemConfigurationDto>> GetSystemConfiguration(CancellationToken cancellationToken);
+        Task<Result<GlAccountResponse>> GetGlAccountByCode(string glCode, CancellationToken cancellationToken);
+        Task<Result<SettlementAccountResponse>> GetSettlementAccountByNumber(string accountNumber, CancellationToken cancellationToken);
+        Task<Result<SuperAgentResponse>> GetSuperAgentById(string agentId, CancellationToken cancellationToken);
+        Task<Result<AgentResponse>> GetAgentById(string agentId, CancellationToken cancellationToken);
+        Task<Result<FloatConfigurationResponse>> GetFloatConfigurationByAgentId(string agentId, CancellationToken cancellationToken);
+        Task<Result<CustomerResponse>> GetCustomerByAccountNumber(string accountNumber, CancellationToken cancellationToken);
+        Task<Result<Decimal>> GetCustomerBalance(string accountNumber, CancellationToken cancellationToken);
+        Task<Result<GoLiveRecordResponse>> GetGoLiveRecord(CancellationToken cancellationToken);
         Task<Result<FloatHistoryResponse[]>> GetLastFloatEntries(string agentId, int count, CancellationToken cancellationToken);
         // Transaction endpoints
         Task<Result> Deposit(DepositRequest request, CancellationToken cancellationToken);
@@ -38,10 +37,10 @@ namespace TestHosts.Clients
         Task<Result<BalanceEnquiryResponse>> BalanceEnquiry(BalanceEnquiryRequest request, CancellationToken cancellationToken);
         Task<Result> MiniStatement(MiniStatementRequest request, CancellationToken cancellationToken);
         Task<Result> Reversal(ReversalRequest request, CancellationToken cancellationToken);
-        Task<SimpleResults.Result<TransactionDto>> GetTransactionById(string transactionId, CancellationToken cancellationToken);
+        Task<Result<TransactionDto>> GetTransactionById(string transactionId, CancellationToken cancellationToken);
     }
 
-    public class AgencyBankingClient : ClientProxyBase.ClientProxyBase, IAgencyBankingClient
+    public class AgencyBankingClient : TransactionProcessing.ClientProxyBase.ClientProxyBase, IAgencyBankingClient
     {
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -92,7 +91,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -113,7 +112,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -134,7 +133,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -155,7 +154,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -175,7 +174,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -196,7 +195,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -217,7 +216,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -237,7 +236,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -259,7 +258,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -280,7 +279,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<SystemConfigurationDto>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -297,7 +296,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<GlAccountResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -314,7 +313,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<SettlementAccountResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -331,7 +330,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<SuperAgentResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -348,7 +347,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<AgentResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -365,7 +364,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<FloatConfigurationResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -382,7 +381,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<CustomerResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -400,7 +399,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<Decimal>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -417,7 +416,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<GoLiveRecordResponse>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -436,7 +435,7 @@ namespace TestHosts.Clients
                 var httpResult = await this.Get<FloatHistoryResponse[]>(requestUri, cancellationToken);
 
                 if (httpResult.IsFailed)
-                    return ResultHelpers.CreateFailure(httpResult);
+                    return CreateFailure(httpResult);
 
                 return Result.Success(httpResult.Data);
             }
@@ -457,7 +456,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -477,7 +476,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -497,7 +496,7 @@ namespace TestHosts.Clients
                 Result<BalanceEnquiryResponse> result = await this.Post<BalanceEnquiryRequest,BalanceEnquiryResponse>(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success(result.Data);
             }   
@@ -517,7 +516,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -537,7 +536,7 @@ namespace TestHosts.Clients
                 Result result = await this.Post(requestUri, request, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success();
             }
@@ -557,7 +556,7 @@ namespace TestHosts.Clients
                 var result = await this.Get<TransactionDto>(requestUri, cancellationToken);
 
                 if (result.IsFailed)
-                    return ResultHelpers.CreateFailure(result);
+                    return CreateFailure(result);
 
                 return Result.Success(result.Data);
             }
@@ -578,5 +577,12 @@ namespace TestHosts.Clients
             String requestUri = $"{this.BaseAddress}{route}";
             return requestUri;
         }
+
+        private static Result CreateFailure(Result result) => result.Errors.Count == 1
+            ? Result.Fail(result.Errors[0])
+            : Result.Fail(new ErrorList(result.Errors));
+
+        private static Result<T> CreateFailure<T>(Result<T> result) => Result<T>.FromFailure(result);
     }
 }
+

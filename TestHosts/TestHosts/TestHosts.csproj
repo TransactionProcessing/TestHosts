@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-	  <TargetFramework>net10.0</TargetFramework>
+	  <TargetFramework>net11.0</TargetFramework>
     <UserSecretsId>96de5658-e1fb-40f6-99ed-4203c8807474</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
@@ -29,7 +29,10 @@
     <PackageReference Include="NuGet.Packaging" />
     <PackageReference Include="NuGet.Protocol" />
     <PackageReference Include="Sentry.AspNetCore" />
-    <PackageReference Include="Shared" />
+    <PackageReference Include="TransactionProcessing.Shared" />
+    <PackageReference Include="TransactionProcessing.Shared.Logger" />
+    <PackageReference Include="TransactionProcessing.UnionResults" />
+    <PackageReference Include="TransactionProcessing.UnionResults.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
@@ -74,3 +77,4 @@
 
 
 </Project>
+

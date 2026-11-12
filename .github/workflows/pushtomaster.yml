@@ -25,6 +25,11 @@ jobs:
       with:
         fetch-depth: 0        
 
+    - name: Setup .NET 11
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 11.0.x
+
     - name: Restore Nuget Packages
       run: dotnet restore TestHosts/TestHosts.sln --source ${{ secrets.PUBLICFEEDURL }} --source ${{ secrets.PRIVATEFEED_URL }}
 
@@ -110,3 +115,4 @@ jobs:
                    
           New-Service -Name $serviceName -BinaryPathName $servicePath -Description $serviceName -DisplayName $serviceName -StartupType Automatic
           Start-Service -Name $serviceName         
+

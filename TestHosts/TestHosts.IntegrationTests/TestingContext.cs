@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Shared.Logger;
+using TransactionProcessing.Shared.Logger;
 using TestHosts.DataTransferObjects.AgencyBanking;
 
 namespace TestHosts.IntegrationTests

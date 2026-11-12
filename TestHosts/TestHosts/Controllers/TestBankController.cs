@@ -4,9 +4,9 @@
     using DataTransferObjects.TestBank;
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json;
-    using Shared.EntityFramework;
-    using Shared.General;
-    using Shared.Logger;
+    using TransactionProcessing.Shared.EntityFramework;
+    using TransactionProcessing.Shared.General;
+    using TransactionProcessing.Shared.Logger;
     using System;
     using System.Linq;
     using System.Net.Http;

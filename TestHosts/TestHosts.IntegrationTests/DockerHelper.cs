@@ -1,18 +1,18 @@
-﻿using Shared.IntegrationTesting;
-using Shared.Serialisation;
+﻿using TransactionProcessing.Shared.IntegrationTesting;
+using TransactionProcessing.Shared.Serialisation;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
-using Shared.IntegrationTesting.TestContainers;
+using TransactionProcessing.Shared.IntegrationTesting.TestContainers;
 using TestHosts.Clients;
 using System.Threading;
 
 namespace TestHosts.IntegrationTests
 {
-    public class DockerHelper : Shared.IntegrationTesting.TestContainers.DockerHelper
+    public class DockerHelper : TransactionProcessing.Shared.IntegrationTesting.TestContainers.DockerHelper
     {
         public IAgencyBankingClient AgencyBankingClient;
 
@@ -63,9 +63,8 @@ namespace TestHosts.IntegrationTests
 
             (String imageName, Boolean useLatest) imageDetails = this.GetImageDetails(ContainerType.TestHost).Data;
 
-            ContainerBuilder testHostContainer = new ContainerBuilder()
+            ContainerBuilder testHostContainer = new ContainerBuilder(imageDetails.imageName)
                 .WithName(this.TestHostContainerName)  // similar to WithName()
-                .WithImage(imageDetails.imageName)
                 .WithEnvironment(environmentVariables)
                 .MountHostFolder(this.HostTraceFolder)
                 .WithPortBinding(DockerPorts.TestHostPort, true);
@@ -74,3 +73,4 @@ namespace TestHosts.IntegrationTests
         }
     }
 }
+
