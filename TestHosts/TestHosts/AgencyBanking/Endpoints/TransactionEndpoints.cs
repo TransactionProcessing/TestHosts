@@ -1,8 +1,8 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
-using SimpleResults;
+using TransactionProcessing.UnionResults;
+using TransactionProcessing.UnionResults.AspNetCore;
 using TestHosts.AgencyBanking.Models;
 using TestHosts.AgencyBanking.Services;
 using TestHosts.DataTransferObjects.AgencyBanking;
@@ -11,92 +11,42 @@ namespace TestHosts.AgencyBanking.Endpoints;
 
 public static class TransactionEndpoints {
     public static WebApplication MapAgencyBankingTransactionEndpoints(this WebApplication app) {
-        app.MapPost("/api/agencybanking/transactions/deposit", TransactionHandlers.Deposit);
+        var transactions = app.MapGroup("/api/agencybanking/transactions").AddUnionResultFilter();
 
-        app.MapPost("/api/agencybanking/transactions/withdrawal", TransactionHandlers.Withdrawal);
-
-        app.MapPost("/api/agencybanking/transactions/balance-enquiry", TransactionHandlers.BalanceEnquiry);
-
-        app.MapPost("/api/agencybanking/transactions/mini-statement", TransactionHandlers.MiniStatement);
-
-        app.MapPost("/api/agencybanking/transactions/reversal", TransactionHandlers.Reversal);
+        transactions.MapPost("/deposit", TransactionHandlers.Deposit)
+            .ProducesUnionResult<TransactionResult>();
+        transactions.MapPost("/withdrawal", TransactionHandlers.Withdrawal)
+            .ProducesUnionResult<TransactionResult>();
+        transactions.MapPost("/balance-enquiry", TransactionHandlers.BalanceEnquiry)
+            .ProducesUnionResult<BalanceEnquiryResult>();
+        transactions.MapPost("/mini-statement", TransactionHandlers.MiniStatement)
+            .ProducesUnionResult<MiniStatementResult>();
+        transactions.MapPost("/reversal", TransactionHandlers.Reversal)
+            .ProducesUnionResult<TransactionResult>();
 
         return app;
     }
 
     public static class TransactionHandlers {
-        public static async Task<IResult> Deposit(DepositRequest request,
-                                                       ITransactionService transactionService) {
-            Result<TransactionResult> response = await transactionService.ProcessDeposit(request);
+        public static Task<Result<TransactionResult>> Deposit(DepositRequest request,
+                                                               ITransactionService transactionService) =>
+            transactionService.ProcessDeposit(request);
 
-            if (response.IsFailed) {
-                // TODO: Translate the response code to a user-friendly message
-                TransactionResponse errorResponse = new()
-                {
-                    ResponseCode = response.Message
-                };
-                return Results.BadRequest(errorResponse);
-            }
+        public static Task<Result<TransactionResult>> Withdrawal(WithdrawalRequest request,
+                                                                  ITransactionService transactionService) =>
+            transactionService.ProcessWithdrawal(request);
 
-            return Results.Ok(response.Data);
-        }
+        public static Task<Result<BalanceEnquiryResult>> BalanceEnquiry(BalanceEnquiryRequest request,
+                                                                        ITransactionService transactionService) =>
+            transactionService.ProcessBalanceEnquiry(request);
 
-        public static async Task<IResult> Withdrawal(WithdrawalRequest request,
-                                                          ITransactionService transactionService)
-        {
-            var response = await transactionService.ProcessWithdrawal(request);
+        public static Task<Result<MiniStatementResult>> MiniStatement(MiniStatementRequest request,
+                                                                      ITransactionService transactionService) =>
+            transactionService.ProcessMiniStatement(request);
 
-            if (response.IsFailed)
-            {
-                // TODO: Translate the response code to a user-friendly message
-                TransactionResponse errorResponse = new();
-                return Results.BadRequest(errorResponse);
-            }
-
-            return Results.Ok(response.Data);
-        }
-
-        public static async Task<IResult> BalanceEnquiry(BalanceEnquiryRequest request,
-                                                              ITransactionService transactionService)
-        {
-            Result<BalanceEnquiryResult> response = await transactionService.ProcessBalanceEnquiry(request);
-
-            if (response.IsFailed)
-            {
-                // TODO: Translate the response code to a user-friendly message
-                TransactionResponse errorResponse = new() { ResponseMessage = response.Errors.ToArray()[1], ResponseCode = response.Errors.ToArray()[0] };
-                return Results.BadRequest(errorResponse);
-            }
-
-            return Results.Ok(response.Data);
-        }
-
-        public static async Task<IResult> MiniStatement(MiniStatementRequest request,
-                                                         ITransactionService transactionService) {
-            var response = await transactionService.ProcessMiniStatement(request);
-
-            if (response.IsFailed)
-            {
-                // TODO: Translate the response code to a user-friendly message
-                TransactionResponse errorResponse = new();
-                return Results.BadRequest(errorResponse);
-            }
-
-            return Results.Ok(response.Data);
-        }
-
-        public static async Task<IResult> Reversal(ReversalRequest request,
-                                                    ITransactionService transactionService) {
-            var response = await transactionService.ProcessReversal(request);
-
-            if (response.IsFailed)
-            {
-                // TODO: Translate the response code to a user-friendly message
-                TransactionResponse errorResponse = new();
-                return Results.BadRequest(errorResponse);
-            }
-
-            return Results.Ok(response.Data);
-        }
+        public static Task<Result<TransactionResult>> Reversal(ReversalRequest request,
+                                                                ITransactionService transactionService) =>
+            transactionService.ProcessReversal(request);
     }
 }
+

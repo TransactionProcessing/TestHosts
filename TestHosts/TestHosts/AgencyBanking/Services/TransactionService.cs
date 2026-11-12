@@ -6,7 +6,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
-using SimpleResults;
+using TransactionProcessing.UnionResults;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -148,7 +148,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "insufficient float",
                     $"transactionId={request.TransactionId} agentId={request.AgentId} response={hasFloat.Message}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, hasFloat.Message ?? ResponseCodes.InsufficientFloat.ToString());
-                return hasFloat;
+                return Result<TransactionResult>.FromFailure(hasFloat);
             }
 
             // ----------------------------------------------------
@@ -163,7 +163,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "reserve float failed",
                     $"transactionId={request.TransactionId} agentId={request.AgentId} response={reserveResult.Message}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, reserveResult.Message ?? ResponseCodes.ReserveFloatFailed.ToString());
-                return reserveResult;
+                return Result<TransactionResult>.FromFailure(reserveResult);
             }
 
             try {
@@ -181,7 +181,7 @@ namespace TestHosts.AgencyBanking.Services {
                         $"transactionId={request.TransactionId} agentId={request.AgentId} response={debitResult.Message}");
                     await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, debitResult.Message ?? ResponseCodes.DebitFloatFailed.ToString());
 
-                    return debitResult;
+                    return Result<TransactionResult>.FromFailure(debitResult);
                 }
 
                 // ------------------------------------------------
@@ -304,7 +304,7 @@ namespace TestHosts.AgencyBanking.Services {
                         "insufficient float",
                         $"transactionId={request.TransactionId} agentId={request.AgentId} response={hasFloat.Message}");
                     await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, hasFloat.Message ?? ResponseCodes.InsufficientFloat.ToString());
-                    return hasFloat;
+                    return Result<TransactionResult>.FromFailure(hasFloat);
                 }
 
                 TransactionEntity existing = await this._db.Transactions.SingleOrDefaultAsync(x => x.TransactionId == request.TransactionId);
@@ -332,7 +332,7 @@ namespace TestHosts.AgencyBanking.Services {
                         "reserve float failed",
                         $"transactionId={request.TransactionId} agentId={request.AgentId} response={reserveResult.Message}");
                     await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, reserveResult.Message ?? ResponseCodes.ReserveFloatFailed.ToString());
-                    return reserveResult;
+                    return Result<TransactionResult>.FromFailure(reserveResult);
                 }
 
                 // ------------------------------------------------
@@ -347,7 +347,7 @@ namespace TestHosts.AgencyBanking.Services {
                         "credit float failed",
                         $"transactionId={request.TransactionId} agentId={request.AgentId} response={floatResult.Message}");
                     await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, floatResult.Message ?? ResponseCodes.DebitFloatFailed.ToString());
-                    return floatResult;
+                    return Result<TransactionResult>.FromFailure(floatResult);
                 }
 
                 // ------------------------------------------------
@@ -593,3 +593,4 @@ namespace TestHosts.AgencyBanking.Services {
         }
     }
 }
+

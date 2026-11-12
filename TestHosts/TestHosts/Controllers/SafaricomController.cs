@@ -11,7 +11,7 @@ namespace TestHosts.Controllers
     using System.Xml;
     using System.Xml.Serialization;
     using DataTransferObjects.Safaricom;
-    using Shared.Logger;
+    using TransactionProcessing.Shared.Logger;
 
     [Route("api/safaricom")]
     [ApiController]

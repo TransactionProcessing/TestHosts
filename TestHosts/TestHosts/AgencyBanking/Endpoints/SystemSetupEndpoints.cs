@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Shared.EntityFramework;
+using TransactionProcessing.Shared.EntityFramework;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using SimpleResults;
+using TransactionProcessing.UnionResults;
 using TestHosts.AgencyBanking.Database;
 using TestHosts.AgencyBanking.Database.Entities;
 using TestHosts.AgencyBanking.Services;
@@ -351,3 +351,4 @@ namespace TestHosts.AgencyBanking.Endpoints
         }
     }
 }
+

@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
-using Shared.General;
+using TransactionProcessing.Shared.General;
 using TestHosts.AgencyBanking.Database.Entities;
 
 namespace TestHosts.AgencyBanking.Database;

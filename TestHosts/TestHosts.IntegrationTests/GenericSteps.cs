@@ -1,7 +1,7 @@
 ﻿using NLog;
 using Reqnroll;
-using Shared.IntegrationTesting;
-using Shared.Logger;
+using TransactionProcessing.Shared.IntegrationTesting;
+using TransactionProcessing.Shared.Logger;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ namespace TestHosts.IntegrationTests
             String scenarioName = this.ScenarioContext.ScenarioInfo.Title.Replace(" ", "");
             NlogLogger logger = new NlogLogger();
             logger.Initialise(LogManager.GetLogger(scenarioName), scenarioName);
-            LogManager.AddHiddenAssembly(typeof(NlogLogger).Assembly);
+            LogManager.Setup().SetupLogFactory(setup => setup.AddCallSiteHiddenAssembly(typeof(NlogLogger).Assembly));
             
             DockerServices dockerServices = DockerServices.TestHost | DockerServices.SqlServer;
 
@@ -63,3 +63,4 @@ namespace TestHosts.IntegrationTests
         }
     }
 }
+

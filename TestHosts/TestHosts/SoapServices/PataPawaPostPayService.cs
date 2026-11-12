@@ -1,4 +1,4 @@
-﻿using Shared.EntityFramework;
+﻿using TransactionProcessing.Shared.EntityFramework;
 
 namespace TestHosts.SoapServices;
 

@@ -1,5 +1,5 @@
 using System;
-using Shared.Logger;
+using TransactionProcessing.Shared.Logger;
 
 namespace TestHosts.AgencyBanking.Services;
 
@@ -35,3 +35,4 @@ public static class AgencyBankingServiceLogging
         return $"Agency Banking {operation} {state}. {context}";
     }
 }
+

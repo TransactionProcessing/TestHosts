@@ -4,7 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Shared.Logger;
+using TransactionProcessing.Shared.Logger;
 using TestHosts.AgencyBanking.Database;
 using TestHosts.Database.PataPawa;
 using TestHosts.Database.TestBank;
@@ -12,7 +12,7 @@ using TestHosts.Database.TestBank;
 namespace TestHosts
 {
     using Microsoft.EntityFrameworkCore;
-    using Shared.EntityFramework;
+    using TransactionProcessing.Shared.EntityFramework;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;

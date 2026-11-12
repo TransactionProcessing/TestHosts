@@ -4,8 +4,8 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
-    using Shared.EntityFramework;
-    using Shared.General;
+    using TransactionProcessing.Shared.EntityFramework;
+    using TransactionProcessing.Shared.General;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Metrics;

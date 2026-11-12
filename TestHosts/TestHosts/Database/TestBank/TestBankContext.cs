@@ -1,7 +1,7 @@
 ﻿namespace TestHosts.Database.TestBank
 {
     using Microsoft.EntityFrameworkCore;
-    using Shared.General;
+    using TransactionProcessing.Shared.General;
     using System;
     using System.Collections.Generic;
     using System.Threading;
@@ -121,3 +121,4 @@ ALTER DATABASE [{dbName}] SET MULTI_USER;
         }
     }
 }
+

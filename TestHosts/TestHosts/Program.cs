@@ -6,6 +6,7 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,11 +19,13 @@ using Newtonsoft.Json.Serialization;
 using NLog;
 using NLog.Web;
 using Sentry.Extensibility;
-using Shared.EntityFramework;
-using Shared.Extensions;
-using Shared.General;
-using Shared.Logger.TennantContext;
-using Shared.Middleware;
+using TransactionProcessing.Shared.EntityFramework;
+using TransactionProcessing.Shared.Extensions;
+using TransactionProcessing.Shared.General;
+using TransactionProcessing.Shared.Logger.TennantContext;
+using TransactionProcessing.Shared.Middleware;
+using TransactionProcessing.UnionResults;
+using TransactionProcessing.UnionResults.AspNetCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -43,6 +46,7 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 try {
 
     WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = AppContext.BaseDirectory });
+    builder.Services.AddUnionResults(options => options.Map(ErrorType.Failure, StatusCodes.Status400BadRequest));
 
     // ----------------------------------------------------------------------
     // Load custom hosting configuration (your existing hosting.json setup)
@@ -184,9 +188,7 @@ try {
 
     // Create a scoped logger and assign it
     using (IServiceScope scope = app.Services.CreateScope()) {
-        ILoggerFactory loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
-        ILogger loggerObject = loggerFactory.CreateLogger("AppStartup");
-        Shared.Logger.Logger.Initialise(loggerObject);
+        TransactionProcessing.Shared.Logger.Logger.Initialise(NLog.LogManager.GetLogger("AppStartup"), "testhosts");
     }
 
     // ----------------------------------------------------------------------
@@ -224,7 +226,7 @@ try {
     app.MapAgencyBankingAuthenticationEndpoints();
     app.MapAgencyBankingTransactionEndpoints();
 
-    app.MapHealthChecks("health", new HealthCheckOptions { Predicate = _ => true, ResponseWriter = Shared.HealthChecks.HealthCheckMiddleware.WriteResponse });
+    app.MapHealthChecks("health", new HealthCheckOptions { Predicate = _ => true, ResponseWriter = TransactionProcessing.Shared.HealthChecks.HealthCheckMiddleware.WriteResponse });
 
     app.MapHealthChecks("healthui", new HealthCheckOptions { Predicate = _ => true, ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
 
@@ -241,10 +243,10 @@ try {
     // ----------------------------------------------------------------------
     app.Run();
 
-    Shared.Logger.Logger.LogWarning("Application started successfully");
+    TransactionProcessing.Shared.Logger.Logger.LogWarning("Application started successfully");
 }
 catch (Exception ex) {
-    Shared.Logger.Logger.LogError("Application stopped due to exception", ex);
+    TransactionProcessing.Shared.Logger.Logger.LogError("Application stopped due to exception", ex);
     throw;
 }
 finally {
@@ -257,3 +259,4 @@ public static class Constants {
     public static readonly String TestBankReadModelConfig = "TestBankReadModel";
     public static readonly String AgencyBankingReadModelConfig = "AgencyBankingReadModel";
 }
+

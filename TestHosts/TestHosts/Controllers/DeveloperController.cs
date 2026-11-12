@@ -7,8 +7,8 @@ namespace TestHosts.Controllers
     using Database.PataPawa;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json;
-    using Shared.EntityFramework;
-    using Shared.General;
+    using TransactionProcessing.Shared.EntityFramework;
+    using TransactionProcessing.Shared.General;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -162,3 +162,4 @@ namespace TestHosts.Controllers
     }
 
 }
+

@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Shouldly;
-using SimpleResults;
+using TransactionProcessing.UnionResults;
 using TestHosts.DataTransferObjects.AgencyBanking;
 
 namespace TestHosts.IntegrationTests
@@ -357,3 +357,4 @@ namespace TestHosts.IntegrationTests
         }
     }
 }
+

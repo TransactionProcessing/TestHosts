@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Shared.General;
+using TransactionProcessing.Shared.General;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -116,3 +116,4 @@ ALTER DATABASE [{dbName}] SET MULTI_USER;
         }
     }
 }
+

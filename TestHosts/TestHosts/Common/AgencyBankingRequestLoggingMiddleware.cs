@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Shared.Logger;
+using TransactionProcessing.Shared.Logger;
 
 namespace TestHosts.Common;
 
@@ -57,3 +57,4 @@ public static class AgencyBankingRequestLoggingMiddleware
         });
     }
 }
+
