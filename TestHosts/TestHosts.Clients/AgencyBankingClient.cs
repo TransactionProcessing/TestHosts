@@ -68,12 +68,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/system/initialize");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -88,12 +83,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/system/go-live");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -109,12 +99,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/glaccounts");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -130,12 +115,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/settlement/accounts");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -151,12 +131,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/agents/super-agent");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -171,12 +146,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/agents");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -192,12 +162,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/agents/{agentId}/activate");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -213,12 +178,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/float/configure");
 
             try {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex) {
                 // An exception has occurred, add some additional information to the message
@@ -233,12 +193,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -255,12 +210,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -276,12 +226,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/system/configuration");
 
             try {
-                var httpResult = await this.Get<SystemConfigurationDto>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<SystemConfigurationDto>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving system configurations.", ex);
@@ -293,12 +238,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/glaccounts/{glCode}");
 
             try {
-                var httpResult = await this.Get<GlAccountResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<GlAccountResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving GL account.", ex);
@@ -310,12 +250,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/settlement/accounts/{accountNumber}");
 
             try {
-                var httpResult = await this.Get<SettlementAccountResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<SettlementAccountResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving settlement account.", ex);
@@ -327,12 +262,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/agents/super-agent/{agentId}");
 
             try {
-                var httpResult = await this.Get<SuperAgentResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<SuperAgentResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving super agent.", ex);
@@ -344,12 +274,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/agents/{agentId}");
 
             try {
-                var httpResult = await this.Get<AgentResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<AgentResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving agent.", ex);
@@ -361,12 +286,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/float/configuration/{agentId}");
 
             try {
-                var httpResult = await this.Get<FloatConfigurationResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<FloatConfigurationResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving float configuration.", ex);
@@ -378,12 +298,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/customers/{accountNumber}");
 
             try {
-                var httpResult = await this.Get<CustomerResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<CustomerResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving customer.", ex);
@@ -396,12 +311,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl($"/api/agencybanking/customers/{accountNumber}/balance");
 
             try {
-                var httpResult = await this.Get<Decimal>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<Decimal>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving customer balance.", ex);
@@ -413,12 +323,7 @@ namespace TestHosts.Clients
             String requestUri = this.BuildRequestUrl("/api/agencybanking/system/go-live/records");
 
             try {
-                var httpResult = await this.Get<GoLiveRecordResponse>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<GoLiveRecordResponse>(requestUri, cancellationToken);
             }
             catch (Exception ex) {
                 Exception exception = new Exception("An error occurred while retrieving go-live records.", ex);
@@ -432,12 +337,7 @@ namespace TestHosts.Clients
 
             try
             {
-                var httpResult = await this.Get<FloatHistoryResponse[]>(requestUri, cancellationToken);
-
-                if (httpResult.IsFailed)
-                    return CreateFailure(httpResult);
-
-                return Result.Success(httpResult.Data);
+                return await this.Get<FloatHistoryResponse[]>(requestUri, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -453,12 +353,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -473,12 +368,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -493,12 +383,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result<BalanceEnquiryResponse> result = await this.Post<BalanceEnquiryRequest,BalanceEnquiryResponse>(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success(result.Data);
+                return await this.Post<BalanceEnquiryRequest,BalanceEnquiryResponse>(requestUri, request, cancellationToken);
             }   
             catch (Exception ex)
             {
@@ -513,12 +398,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -533,12 +413,7 @@ namespace TestHosts.Clients
 
             try
             {
-                Result result = await this.Post(requestUri, request, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success();
+                return await this.Post(requestUri, request, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -553,12 +428,7 @@ namespace TestHosts.Clients
 
             try
             {
-                var result = await this.Get<TransactionDto>(requestUri, cancellationToken);
-
-                if (result.IsFailed)
-                    return CreateFailure(result);
-
-                return Result.Success(result.Data);
+                return await this.Get<TransactionDto>(requestUri, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -577,12 +447,6 @@ namespace TestHosts.Clients
             String requestUri = $"{this.BaseAddress}{route}";
             return requestUri;
         }
-
-        private static Result CreateFailure(Result result) => result.Errors.Count == 1
-            ? Result.Fail(result.Errors[0])
-            : Result.Fail(new ErrorList(result.Errors));
-
-        private static Result<T> CreateFailure<T>(Result<T> result) => Result<T>.FromFailure(result);
     }
 }
 

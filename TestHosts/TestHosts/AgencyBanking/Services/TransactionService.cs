@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // ENTERPRISE TRANSACTION SERVICE
 // WITH FULL FLOAT SERVICE INTEGRATION
 // ============================================================
@@ -94,7 +94,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "invalid agent",
                     $"transactionId={request.TransactionId} agentId={request.AgentId}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.InvalidAgent.ToString());
-                return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.InvalidAgent.ToString());
             }
 
             if (!agent.Active) {
@@ -103,7 +103,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "agent disabled",
                     $"transactionId={request.TransactionId} agentId={request.AgentId}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.AgentDisabled.ToString());
-                return Result.Failure(ResponseCodes.AgentDisabled.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.AgentDisabled.ToString());
             }
 
             // ----------------------------------------------------
@@ -118,7 +118,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "invalid customer account",
                     $"transactionId={request.TransactionId} accountNumber={request.AccountNumber}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.InvalidCustomerAccount.ToString());
-                return Result.Failure(ResponseCodes.InvalidCustomerAccount.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.InvalidCustomerAccount.ToString());
             }
 
             // ----------------------------------------------------
@@ -133,7 +133,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "duplicate transaction",
                     $"transactionId={request.TransactionId}");
                 await RecordDuplicateTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.DuplicateTransaction.ToString(), existing.Id);
-                return Result.Failure(ResponseCodes.DuplicateTransaction.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.DuplicateTransaction.ToString());
             }
 
             // ----------------------------------------------------
@@ -142,13 +142,14 @@ namespace TestHosts.AgencyBanking.Services {
 
             Result hasFloat = await this._floatService.HasSufficientFloat(request.AgentId, request.Amount);
 
-            if (hasFloat.IsFailed) {
+            if (!hasFloat.IsSuccess()) {
+                var message = hasFloat.GetErrors().FirstOrDefault()?.Message;
                 AgencyBankingServiceLogging.Warn(
                     "ProcessDeposit",
                     "insufficient float",
-                    $"transactionId={request.TransactionId} agentId={request.AgentId} response={hasFloat.Message}");
-                await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, hasFloat.Message ?? ResponseCodes.InsufficientFloat.ToString());
-                return Result<TransactionResult>.FromFailure(hasFloat);
+                    $"transactionId={request.TransactionId} agentId={request.AgentId} response={message}");
+                await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, message ?? ResponseCodes.InsufficientFloat.ToString());
+                return ToTransactionFailure(hasFloat);
             }
 
             // ----------------------------------------------------
@@ -156,14 +157,15 @@ namespace TestHosts.AgencyBanking.Services {
             // ----------------------------------------------------
 
             Result reserveResult = await this._floatService.ReserveFloat(request.AgentId, request.Amount, request.TransactionId);
-            if (reserveResult.IsFailed) {
+            if (!reserveResult.IsSuccess()) {
+                var message = reserveResult.GetErrors().FirstOrDefault()?.Message;
                 // TODO: Log Error.....
                 AgencyBankingServiceLogging.Warn(
                     "ProcessDeposit",
                     "reserve float failed",
-                    $"transactionId={request.TransactionId} agentId={request.AgentId} response={reserveResult.Message}");
-                await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, reserveResult.Message ?? ResponseCodes.ReserveFloatFailed.ToString());
-                return Result<TransactionResult>.FromFailure(reserveResult);
+                    $"transactionId={request.TransactionId} agentId={request.AgentId} response={message}");
+                await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, message ?? ResponseCodes.ReserveFloatFailed.ToString());
+                return ToTransactionFailure(reserveResult);
             }
 
             try {
@@ -174,14 +176,15 @@ namespace TestHosts.AgencyBanking.Services {
                 Result debitResult = await this._floatService.DebitFloat(request.AgentId, request.Amount, request.TransactionId, $"Transaction {request.TransactionId}");
 
                 // TODO: Log Error
-                if (debitResult.IsFailed) {
+                if (!debitResult.IsSuccess()) {
+                    var message = debitResult.GetErrors().FirstOrDefault()?.Message;
                     AgencyBankingServiceLogging.Warn(
                         "ProcessDeposit",
                         "debit float failed",
-                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={debitResult.Message}");
-                    await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, debitResult.Message ?? ResponseCodes.DebitFloatFailed.ToString());
+                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={message}");
+                    await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, message ?? ResponseCodes.DebitFloatFailed.ToString());
 
-                    return Result<TransactionResult>.FromFailure(debitResult);
+                    return ToTransactionFailure(debitResult);
                 }
 
                 // ------------------------------------------------
@@ -250,7 +253,7 @@ namespace TestHosts.AgencyBanking.Services {
 
                 await this._notifications.Send(customer.AccountNumber, $"Cash-in successful. Amount: {request.Amount}");
 
-                return Result.Success(new TransactionResult { TransactionId = request.TransactionId, ResponseCode = "0" });
+                return Results.Ok(new TransactionResult { TransactionId = request.TransactionId, ResponseCode = "0" });
             }
             catch (Exception ex) {
                 AgencyBankingServiceLogging.Failed(
@@ -260,7 +263,7 @@ namespace TestHosts.AgencyBanking.Services {
                 await this._audit.Log(request.TransactionId, "DEPOSIT", $"FAILED: {ex.Message}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.SystemError.ToString());
 
-                return Result.Failure(ResponseCodes.SystemError.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.SystemError.ToString());
             }
         }
 
@@ -276,7 +279,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "invalid account",
                     $"transactionId={request.TransactionId} accountNumber={request.AccountNumber}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.InvalidAccount.ToString());
-                return Result.Failure(ResponseCodes.InvalidAccount.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.InvalidAccount.ToString());
             }
 
             if (customer.Balance < request.Amount) {
@@ -285,7 +288,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "insufficient funds",
                     $"transactionId={request.TransactionId} accountNumber={request.AccountNumber} balance={customer.Balance} amount={request.Amount}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.InsufficientFunds.ToString());
-                return Result.Failure(ResponseCodes.InsufficientFunds.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.InsufficientFunds.ToString());
             }
 
             try {
@@ -297,14 +300,15 @@ namespace TestHosts.AgencyBanking.Services {
 
                 Result hasFloat = await this._floatService.HasSufficientFloat(request.AgentId, request.Amount);
 
-                if (hasFloat.IsFailed)
+                if (!hasFloat.IsSuccess())
                 {
+                    var message = hasFloat.GetErrors().FirstOrDefault()?.Message;
                     AgencyBankingServiceLogging.Warn(
                         "ProcessWithdrawal",
                         "insufficient float",
-                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={hasFloat.Message}");
-                    await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, hasFloat.Message ?? ResponseCodes.InsufficientFloat.ToString());
-                    return Result<TransactionResult>.FromFailure(hasFloat);
+                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={message}");
+                    await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, message ?? ResponseCodes.InsufficientFloat.ToString());
+                    return ToTransactionFailure(hasFloat);
                 }
 
                 TransactionEntity existing = await this._db.Transactions.SingleOrDefaultAsync(x => x.TransactionId == request.TransactionId);
@@ -316,7 +320,7 @@ namespace TestHosts.AgencyBanking.Services {
                         "duplicate transaction",
                         $"transactionId={request.TransactionId}");
                     await RecordDuplicateTransaction(request.TransactionId, "CASH_IN", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.DuplicateTransaction.ToString(), existing.Id);
-                    return Result.Failure(ResponseCodes.DuplicateTransaction.ToString());
+                    return new Error(ErrorType.Failure, ResponseCodes.DuplicateTransaction.ToString());
                 }
 
                 // ----------------------------------------------------
@@ -324,15 +328,16 @@ namespace TestHosts.AgencyBanking.Services {
                 // ----------------------------------------------------
 
                 Result reserveResult = await this._floatService.ReserveFloat(request.AgentId, request.Amount, request.TransactionId);
-                if (reserveResult.IsFailed)
+                if (!reserveResult.IsSuccess())
                 {
+                    var message = reserveResult.GetErrors().FirstOrDefault()?.Message;
                     // TODO: Log Error.....
                     AgencyBankingServiceLogging.Warn(
                         "ProcessWithdrawal",
                         "reserve float failed",
-                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={reserveResult.Message}");
-                    await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, reserveResult.Message ?? ResponseCodes.ReserveFloatFailed.ToString());
-                    return Result<TransactionResult>.FromFailure(reserveResult);
+                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={message}");
+                    await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, message ?? ResponseCodes.ReserveFloatFailed.ToString());
+                    return ToTransactionFailure(reserveResult);
                 }
 
                 // ------------------------------------------------
@@ -341,13 +346,14 @@ namespace TestHosts.AgencyBanking.Services {
 
                 var floatResult = await this._floatService.CreditFloat(request.AgentId, request.Amount, request.TransactionId, $"Transaction {request.TransactionId}");
 
-                if (floatResult.IsFailed) {
+                if (!floatResult.IsSuccess()) {
+                    var message = floatResult.GetErrors().FirstOrDefault()?.Message;
                     AgencyBankingServiceLogging.Warn(
                         "ProcessWithdrawal",
                         "credit float failed",
-                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={floatResult.Message}");
-                    await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, floatResult.Message ?? ResponseCodes.DebitFloatFailed.ToString());
-                    return Result<TransactionResult>.FromFailure(floatResult);
+                        $"transactionId={request.TransactionId} agentId={request.AgentId} response={message}");
+                    await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, message ?? ResponseCodes.DebitFloatFailed.ToString());
+                    return ToTransactionFailure(floatResult);
                 }
 
                 // ------------------------------------------------
@@ -379,7 +385,7 @@ namespace TestHosts.AgencyBanking.Services {
 
                 await this._db.SaveChangesAsync();
 
-                return Result.Success(new TransactionResult { TransactionId = request.TransactionId, ResponseCode = "00"});
+                return Results.Ok(new TransactionResult { TransactionId = request.TransactionId, ResponseCode = "00"});
             }
             catch (Exception ex) {
                 AgencyBankingServiceLogging.Failed(
@@ -387,7 +393,7 @@ namespace TestHosts.AgencyBanking.Services {
                     ex,
                     $"transactionId={request.TransactionId} agentId={request.AgentId}");
                 await RecordFailedTransaction(request.TransactionId, "CASH_OUT", request.AgentId, request.AccountNumber, request.Amount, ResponseCodes.SystemError.ToString());
-                return Result.Failure(ResponseCodes.SystemError.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.SystemError.ToString());
             }
         }
         
@@ -402,13 +408,16 @@ namespace TestHosts.AgencyBanking.Services {
                     "ProcessBalanceEnquiry",
                     "account not found",
                     $"accountNumber={request.AccountNumber}");
-                return Result.Failure([((Int32)ResponseCodes.InvalidAccount).ToString(), $"No account found with number [{request.AccountNumber}]"]);
+                return new ErrorList([
+                    new Error(ErrorType.Failure, ((Int32)ResponseCodes.InvalidAccount).ToString()),
+                    new Error(ErrorType.Failure, $"No account found with number [{request.AccountNumber}]")
+                ]);
             }
 
             AgencyBankingServiceLogging.Completed(
                 "ProcessBalanceEnquiry",
                 $"accountNumber={request.AccountNumber}");
-            return Result.Success(new BalanceEnquiryResult { ResponseCode = "00", ResponseMessage = "Success", AvailableBalance = account.Balance });
+            return Results.Ok(new BalanceEnquiryResult { ResponseCode = "00", ResponseMessage = "Success", AvailableBalance = account.Balance });
         }
         
         public async Task<Result<MiniStatementResult>> ProcessMiniStatement(MiniStatementRequest request) {
@@ -423,7 +432,7 @@ namespace TestHosts.AgencyBanking.Services {
             AgencyBankingServiceLogging.Completed(
                 "ProcessMiniStatement",
                 $"accountNumber={request.AccountNumber} count={transactions.Count}");
-            return Result.Success(new MiniStatementResult { ResponseCode = "00", ResponseMessage = "Success", Transactions = transactions });
+            return Results.Ok(new MiniStatementResult { ResponseCode = "00", ResponseMessage = "Success", Transactions = transactions });
         }
         
         public async Task<Result<TransactionResult>> ProcessReversal(ReversalRequest request) {
@@ -438,7 +447,7 @@ namespace TestHosts.AgencyBanking.Services {
                     "original transaction not found",
                     $"transactionId={request.TransactionId} originalTransactionId={request.OriginalTransactionId}");
                 await RecordFailedTransaction(request.TransactionId, "REVERSAL", request.TransactionId /* use provided id as agent? */, "", 0, ResponseCodes.OriginalTransactionNotFound.ToString());
-                return Result.Failure(ResponseCodes.OriginalTransactionNotFound.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.OriginalTransactionNotFound.ToString());
             }
 
             try {
@@ -463,7 +472,7 @@ namespace TestHosts.AgencyBanking.Services {
                         "customer account not found",
                         $"transactionId={request.TransactionId} originalTransactionId={request.OriginalTransactionId}");
                     await RecordFailedTransaction(request.TransactionId, "REVERSAL", original.AgentId, original.CustomerAccount, original.Amount, ResponseCodes.InvalidAccount.ToString());
-                    return Result.Failure(ResponseCodes.InvalidAccount.ToString());
+                    return new Error(ErrorType.Failure, ResponseCodes.InvalidAccount.ToString());
                 }
 
                 if (original.Amount <= 0)
@@ -473,7 +482,7 @@ namespace TestHosts.AgencyBanking.Services {
                         "invalid amount",
                         $"transactionId={request.TransactionId} originalTransactionId={request.OriginalTransactionId} amount={original.Amount}");
                     await RecordFailedTransaction(request.TransactionId, "REVERSAL", original.AgentId, original.CustomerAccount, original.Amount, ResponseCodes.InvalidAmount.ToString());
-                    return Result.Failure(ResponseCodes.InvalidAmount.ToString());
+                    return new Error(ErrorType.Failure, ResponseCodes.InvalidAmount.ToString());
                 }
 
                 // CUSTOMER BALANCE UPDATE
@@ -511,7 +520,7 @@ namespace TestHosts.AgencyBanking.Services {
                 AgencyBankingServiceLogging.Completed(
                     "ProcessReversal",
                     $"transactionId={request.TransactionId} originalTransactionId={request.OriginalTransactionId}");
-                return Result.Success(new TransactionResult { TransactionId = request.TransactionId, ResponseCode = "00", Success = true });
+                return Results.Ok(new TransactionResult { TransactionId = request.TransactionId, ResponseCode = "00", Success = true });
             }
             catch (Exception ex) {
                 AgencyBankingServiceLogging.Failed(
@@ -519,7 +528,7 @@ namespace TestHosts.AgencyBanking.Services {
                     ex,
                     $"transactionId={request.TransactionId} originalTransactionId={request.OriginalTransactionId}");
                 await RecordFailedTransaction(request.TransactionId, "REVERSAL", original?.AgentId ?? "", original?.CustomerAccount ?? "", original?.Amount ?? 0, ResponseCodes.SystemError.ToString());
-                return Result.Failure(ResponseCodes.SystemError.ToString());
+                return new Error(ErrorType.Failure, ResponseCodes.SystemError.ToString());
             }
         }
 
@@ -557,6 +566,13 @@ namespace TestHosts.AgencyBanking.Services {
                 // swallow; do not raise further errors when attempting to record failures
             }
         }
+
+        private static Result<TransactionResult> ToTransactionFailure(Result result) => result.Value switch {
+            Error error => error,
+            ErrorList errors => errors,
+            null => result.GetErrors()[0],
+            _ => throw new InvalidOperationException("Only failed transaction results can be propagated.")
+        };
 
         private async Task RecordDuplicateTransaction(string transactionId, string transactionType, string agentId, string customerAccount, decimal amount, string responseCode, Guid isDuplicateOf)
         {
