@@ -73,7 +73,7 @@ public class FloatService : IFloatService
                 "DebitFloat",
                 "invalid agent",
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+            return Results.Fail(ResponseCodes.InvalidAgent.ToString());
         }
 
         if (!agent.Active) {
@@ -81,7 +81,7 @@ public class FloatService : IFloatService
                 "DebitFloat",
                 "agent disabled",
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.AgentDisabled.ToString());
+            return Results.Fail(ResponseCodes.AgentDisabled.ToString());
         }
 
         Decimal availableFloat = agent.FloatBalance - agent.ReservedFloat;
@@ -91,7 +91,7 @@ public class FloatService : IFloatService
                 "DebitFloat",
                 "insufficient float",
                 $"agentId={agentId} transactionId={transactionId} availableFloat={availableFloat} amount={amount}");
-            return Result.Failure(ResponseCodes.InsufficientFloat.ToString());
+            return Results.Fail(ResponseCodes.InsufficientFloat.ToString());
         }
 
         try
@@ -121,7 +121,7 @@ public class FloatService : IFloatService
             AgencyBankingServiceLogging.Completed(
                 "DebitFloat",
                 $"agentId={agentId} transactionId={transactionId} balance={closingBalance}");
-            return Result.Success();
+            return Results.Ok();
         }
         catch (Exception ex)
         {
@@ -129,7 +129,7 @@ public class FloatService : IFloatService
                 "DebitFloat",
                 ex,
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.SystemError.ToString());
+            return Results.Fail(ResponseCodes.SystemError.ToString());
         }
     }
 
@@ -154,7 +154,7 @@ public class FloatService : IFloatService
                 "CreditFloat",
                 "invalid agent",
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+            return Results.Fail(ResponseCodes.InvalidAgent.ToString());
         }
 
         try
@@ -187,7 +187,7 @@ public class FloatService : IFloatService
             AgencyBankingServiceLogging.Completed(
                 "CreditFloat",
                 $"agentId={agentId} transactionId={transactionId} balance={closingBalance}");
-            return Result.Success();
+            return Results.Ok();
         }
         catch (Exception ex)
         {
@@ -196,7 +196,7 @@ public class FloatService : IFloatService
                 ex,
                 $"agentId={agentId} transactionId={transactionId}");
 
-            return Result.Failure(ResponseCodes.SystemError.ToString());
+            return Results.Fail(ResponseCodes.SystemError.ToString());
         }
     }
 
@@ -221,7 +221,7 @@ public class FloatService : IFloatService
                 "ReserveFloat",
                 "invalid agent",
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+            return Results.Fail(ResponseCodes.InvalidAgent.ToString());
         }
 
         var available =
@@ -233,7 +233,7 @@ public class FloatService : IFloatService
                 "ReserveFloat",
                 "insufficient float",
                 $"agentId={agentId} transactionId={transactionId} availableFloat={available} amount={amount}");
-            return Result.Failure(ResponseCodes.InsufficientFloat.ToString());
+            return Results.Fail(ResponseCodes.InsufficientFloat.ToString());
         }
 
         try
@@ -259,7 +259,7 @@ public class FloatService : IFloatService
             AgencyBankingServiceLogging.Completed(
                 "ReserveFloat",
                 $"agentId={agentId} transactionId={transactionId} reservedFloat={agent.ReservedFloat}");
-            return Result.Success();
+            return Results.Ok();
         }
         catch (Exception ex)
         {            
@@ -267,7 +267,7 @@ public class FloatService : IFloatService
                 "ReserveFloat",
                 ex,
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.SystemError.ToString());
+            return Results.Fail(ResponseCodes.SystemError.ToString());
         }
     }
 
@@ -293,7 +293,7 @@ public class FloatService : IFloatService
                 "ReleaseReservedFloat",
                 "invalid agent",
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+            return Results.Fail(ResponseCodes.InvalidAgent.ToString());
         }
 
         if (agent.ReservedFloat < amount)
@@ -302,7 +302,7 @@ public class FloatService : IFloatService
                 "ReleaseReservedFloat",
                 "insufficient reserved float",
                 $"agentId={agentId} transactionId={transactionId} reservedFloat={agent.ReservedFloat} amount={amount}");
-            return Result.Failure(ResponseCodes.InsufficientReservedFloat.ToString());
+            return Results.Fail(ResponseCodes.InsufficientReservedFloat.ToString());
         }
 
         try
@@ -328,7 +328,7 @@ public class FloatService : IFloatService
             AgencyBankingServiceLogging.Completed(
                 "ReleaseReservedFloat",
                 $"agentId={agentId} transactionId={transactionId} reservedFloat={agent.ReservedFloat}");
-            return Result.Success();
+            return Results.Ok();
         }
         catch (Exception ex)
         {
@@ -336,7 +336,7 @@ public class FloatService : IFloatService
                 "ReleaseReservedFloat",
                 ex,
                 $"agentId={agentId} transactionId={transactionId}");
-            return Result.Failure(ResponseCodes.SystemError.ToString());
+            return Results.Fail(ResponseCodes.SystemError.ToString());
         }
     }
 
@@ -359,18 +359,18 @@ public class FloatService : IFloatService
                 "HasSufficientFloat",
                 "invalid agent",
                 $"agentId={agentId}");
-            return Result.Failure(ResponseCodes.InvalidAgent.ToString());
+            return Results.Fail(ResponseCodes.InvalidAgent.ToString());
         }
 
         var available = agent.FloatBalance - agent.ReservedFloat;
 
         Result result = available >= amount
-            ? Result.Success()
-            : Result.Failure(ResponseCodes.InsufficientFloat.ToString());
+            ? Results.Ok()
+            : Results.Fail(ResponseCodes.InsufficientFloat.ToString());
 
         AgencyBankingServiceLogging.Completed(
             "HasSufficientFloat",
-            $"agentId={agentId} amount={amount} availableFloat={available} result={(result.IsFailed ? "failed" : "success")}");
+            $"agentId={agentId} amount={amount} availableFloat={available} result={(result.IsSuccess() ? "success" : "failed")}");
         return result;
     }
 

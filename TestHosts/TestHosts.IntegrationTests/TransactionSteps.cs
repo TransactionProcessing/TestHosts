@@ -46,7 +46,7 @@ public class TransactionSteps
         };
 
         Result response = await this.TestingContext.DockerHelper.AgencyBankingClient.Deposit(request, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
+        response.IsSuccess().ShouldBeTrue();
     }
 
     [When("agent {string} performs a cash withdrawal with:")]
@@ -68,7 +68,7 @@ public class TransactionSteps
         };
 
         Result response = await this.TestingContext.DockerHelper.AgencyBankingClient.Withdrawal(request, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
+        response.IsSuccess().ShouldBeTrue();
     }
 
     [When("agent {string} performs a cash withdrawal with which fails:")]
@@ -90,7 +90,7 @@ public class TransactionSteps
         };
 
         Result response = await this.TestingContext.DockerHelper.AgencyBankingClient.Withdrawal(request, CancellationToken.None);
-        response.IsFailed.ShouldBeTrue();
+        response.IsSuccess().ShouldBeFalse();
     }
 
     [When("agent {string} performs a cash deposit with which fails:")]
@@ -112,7 +112,7 @@ public class TransactionSteps
         };
 
         Result response = await this.TestingContext.DockerHelper.AgencyBankingClient.Deposit(request, CancellationToken.None);
-        response.IsFailed.ShouldBeTrue();
+        response.IsSuccess().ShouldBeFalse();
     }
     
     [When("agent {string} performs a balance enquiry with:")]
@@ -127,9 +127,9 @@ public class TransactionSteps
         };
 
         Result<BalanceEnquiryResponse> response = await this.TestingContext.DockerHelper.AgencyBankingClient.BalanceEnquiry(request, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
+        var balanceEnquiry = response.Value.ShouldBeOfType<Success<BalanceEnquiryResponse>>().Value;
         
-        this.TestingContext.AddBalanceEnquiryResponse(request.AccountNumber, response.Data);
+        this.TestingContext.AddBalanceEnquiryResponse(request.AccountNumber, balanceEnquiry);
     }
 
     [Then("the available account balance for {string} should be returned as {int}")]
@@ -143,25 +143,25 @@ public class TransactionSteps
     public async Task ThenTheTransactionIdShouldBeSuccessfulTheTransactionStatusShouldBe(string transactionId, string extectedStatus)
     {
         var response = await this.TestingContext.DockerHelper.AgencyBankingClient.GetTransactionById(transactionId, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
-        response.Data.Status.ShouldBe(extectedStatus);
+        var data = response.Value.ShouldBeOfType<Success<TransactionDto>>().Value;
+        data.Status.ShouldBe(extectedStatus);
     }
 
     [Then("the transaction id {string} should fail And the transaction status should be {string}")]
     public async Task ThenTheTransactionIdShouldFailAndTheTransactionStatusShouldBe(string transactionId, string expectedStatus)
     {
         var response = await this.TestingContext.DockerHelper.AgencyBankingClient.GetTransactionById(transactionId, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
-        response.Data.Status.ShouldBe(expectedStatus);
+        var data = response.Value.ShouldBeOfType<Success<TransactionDto>>().Value;
+        data.Status.ShouldBe(expectedStatus);
     }
 
     [Then("the transaction id {string} should fail And the transaction status should be {string} and the response code should be {string}")]
     public async Task ThenTheTransactionIdShouldFailAndTheTransactionStatusShouldBeAndTheResponseCodeShouldBe(string transactionId, string expectedStatus, string responsecode)
     {
         var response = await this.TestingContext.DockerHelper.AgencyBankingClient.GetTransactionById(transactionId, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
-        response.Data.Status.ShouldBe(expectedStatus);
-        response.Data.ResponseCode.ShouldBe(responsecode);
+        var data = response.Value.ShouldBeOfType<Success<TransactionDto>>().Value;
+        data.Status.ShouldBe(expectedStatus);
+        data.ResponseCode.ShouldBe(responsecode);
     }
 
 
@@ -170,8 +170,8 @@ public class TransactionSteps
     public async Task ThenTheResponseCodeForTransactionIdShouldBe(string transactionId, string responseCode)
     {
         var response = await this.TestingContext.DockerHelper.AgencyBankingClient.GetTransactionById(transactionId, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
-        response.Data.ResponseCode.ShouldBe(responseCode);
+        var data = response.Value.ShouldBeOfType<Success<TransactionDto>>().Value;
+        data.ResponseCode.ShouldBe(responseCode);
     }
 
 
@@ -181,16 +181,16 @@ public class TransactionSteps
     public async Task ThenTheCustomerAccountBalanceShouldBe(string accountNumber, int amount)
     {
         var response = await this.TestingContext.DockerHelper.AgencyBankingClient.GetCustomerBalance(accountNumber, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
-        response.Data.ShouldBe(amount);
+        var data = response.Value.ShouldBeOfType<Success<Decimal>>().Value;
+        data.ShouldBe(amount);
     }
 
     [Then("the agent {string} float balance should be {int}")]
     public async Task ThenTheAgentFloatBalanceShouldBe(string agentId, int amount)
     {
         Result<AgentResponse> response = await this.TestingContext.DockerHelper.AgencyBankingClient.GetAgentById(agentId, CancellationToken.None);
-        response.IsSuccess.ShouldBeTrue();
-        response.Data.FloatBalance.ShouldBe(amount);
+        var data = response.Value.ShouldBeOfType<Success<AgentResponse>>().Value;
+        data.FloatBalance.ShouldBe(amount);
     }
 
     [When("agent {string} performs a transaction reversal with:")]
@@ -209,7 +209,7 @@ public class TransactionSteps
         };
         
         Result result = await this.TestingContext.DockerHelper.AgencyBankingClient.Reversal(request, CancellationToken.None);
-        result.IsSuccess.ShouldBeTrue();
+        result.IsSuccess().ShouldBeTrue();
     }
 
 

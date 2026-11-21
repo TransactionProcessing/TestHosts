@@ -9,6 +9,7 @@ using DotNet.Testcontainers.Builders;
 using TransactionProcessing.Shared.IntegrationTesting.TestContainers;
 using TestHosts.Clients;
 using System.Threading;
+using TransactionProcessing.UnionResults;
 
 namespace TestHosts.IntegrationTests
 {
@@ -61,7 +62,11 @@ namespace TestHosts.IntegrationTests
                 environmentVariables.Add(additionalEnvironmentVariable.Key, additionalEnvironmentVariable.Value);
             }
 
-            (String imageName, Boolean useLatest) imageDetails = this.GetImageDetails(ContainerType.TestHost).Data;
+            var imageResult = this.GetImageDetails(ContainerType.TestHost);
+            if (imageResult.Value is not Success<(String imageName, Boolean useLatest)> image)
+                throw new InvalidOperationException(imageResult.GetErrorMessage());
+
+            var imageDetails = image.Value;
 
             ContainerBuilder testHostContainer = new ContainerBuilder(imageDetails.imageName)
                 .WithName(this.TestHostContainerName)  // similar to WithName()

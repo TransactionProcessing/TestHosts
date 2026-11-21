@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using TransactionProcessing.Shared.EntityFramework;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TransactionProcessing.UnionResults;
@@ -10,6 +11,7 @@ using TestHosts.AgencyBanking.Database;
 using TestHosts.AgencyBanking.Database.Entities;
 using TestHosts.AgencyBanking.Services;
 using TestHosts.DataTransferObjects.AgencyBanking;
+using Results = Microsoft.AspNetCore.Http.Results;
 
 namespace TestHosts.AgencyBanking.Endpoints
 {
@@ -343,12 +345,22 @@ namespace TestHosts.AgencyBanking.Endpoints
         {
             Result response = await floatService.CreditFloat(request.AgentId, request.Amount, request.TransactionId, request.Narration);
 
-            if (response.IsFailed) {
-                return Results.BadRequest(response);
-            }
-
-            return Results.Ok(response);
+            return response.Value switch
+            {
+                Success => Results.Ok(new { }),
+                ErrorList errors => Results.BadRequest(errors.Select(ToErrorResponse).ToArray()),
+                _ => Results.BadRequest(ToErrorResponse(response.GetErrors()[0]))
+            };
         }
+
+        // Keep the float endpoint's existing JSON error fields.
+        private static object ToErrorResponse(Error error) => new
+        {
+            Code = error.ErrorType.ToString(),
+            error.Message,
+            error.ErrorType,
+            Field = (string)null
+        };
     }
 }
 

@@ -49,17 +49,17 @@ namespace TestHosts.IntegrationTests
                 SettlementMode = data["settlementMode"]
             };
             Result result = await this.TestingContext.DockerHelper.AgencyBankingClient.InitializeSystem(request, CancellationToken.None);
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
             // TODO: add assertions
-            var systemConfiguration = await this.TestingContext.DockerHelper.AgencyBankingClient.GetSystemConfiguration(CancellationToken.None);
-            systemConfiguration.IsSuccess.ShouldBeTrue();
-            systemConfiguration.Data.ShouldNotBeNull();
-            systemConfiguration.Data.InstitutionCode.ShouldBe(request.InstitutionCode);
-            systemConfiguration.Data.InstitutionName.ShouldBe(request.InstitutionName);
-            systemConfiguration.Data.DefaultCurrency.ShouldBe(request.DefaultCurrency);
-            systemConfiguration.Data.Timezone.ShouldBe(request.Timezone);
-            systemConfiguration.Data.SettlementMode.ShouldBe(request.SettlementMode);
+            var systemConfigurationResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetSystemConfiguration(CancellationToken.None);
+            var systemConfiguration = systemConfigurationResult.Value.ShouldBeOfType<Success<SystemConfigurationDto>>().Value;
+            systemConfiguration.ShouldNotBeNull();
+            systemConfiguration.InstitutionCode.ShouldBe(request.InstitutionCode);
+            systemConfiguration.InstitutionName.ShouldBe(request.InstitutionName);
+            systemConfiguration.DefaultCurrency.ShouldBe(request.DefaultCurrency);
+            systemConfiguration.Timezone.ShouldBe(request.Timezone);
+            systemConfiguration.SettlementMode.ShouldBe(request.SettlementMode);
         }
 
         [When(@"I approve go live with:")]
@@ -71,13 +71,13 @@ namespace TestHosts.IntegrationTests
             
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.GoLive(request, CancellationToken.None);
 
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
 
-            var golive = await this.TestingContext.DockerHelper.AgencyBankingClient.GetGoLiveRecord(CancellationToken.None);
-            golive.IsSuccess.ShouldBeTrue();
-            golive.Data.ShouldNotBeNull();
-            golive.Data.ApprovedBy.ShouldBe(request.ApprovedBy);
-            golive.Data.Environment.ShouldBe(request.Environment);
+            var goliveResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetGoLiveRecord(CancellationToken.None);
+            var golive = goliveResult.Value.ShouldBeOfType<Success<GoLiveRecordResponse>>().Value;
+            golive.ShouldNotBeNull();
+            golive.ApprovedBy.ShouldBe(request.ApprovedBy);
+            golive.Environment.ShouldBe(request.Environment);
             
         }
     }
@@ -104,15 +104,15 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.CreateGlAccount(request, CancellationToken.None);
 
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
 
-            var glaccount = await this.TestingContext.DockerHelper.AgencyBankingClient.GetGlAccountByCode(request.GlCode, CancellationToken.None);
-            glaccount.IsSuccess.ShouldBeTrue();
-            glaccount.Data.ShouldNotBeNull();
-            glaccount.Data.GlCode.ShouldBe(request.GlCode);
-            glaccount.Data.GlName.ShouldBe(request.GlName);
-            glaccount.Data.GlType.ShouldBe(request.GlType);
-            glaccount.Data.Currency.ShouldBe(request.Currency);
+            var glaccountResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetGlAccountByCode(request.GlCode, CancellationToken.None);
+            var glaccount = glaccountResult.Value.ShouldBeOfType<Success<GlAccountResponse>>().Value;
+            glaccount.ShouldNotBeNull();
+            glaccount.GlCode.ShouldBe(request.GlCode);
+            glaccount.GlName.ShouldBe(request.GlName);
+            glaccount.GlType.ShouldBe(request.GlType);
+            glaccount.Currency.ShouldBe(request.Currency);
         }
     }
 
@@ -138,15 +138,15 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.CreateSettlementAccount(request, CancellationToken.None);
 
             // TODO: add assertions;
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
 
-            var settlementAccount = await this.TestingContext.DockerHelper.AgencyBankingClient.GetSettlementAccountByNumber(request.AccountNumber, CancellationToken.None);
-            settlementAccount.IsSuccess.ShouldBeTrue();
-            settlementAccount.Data.ShouldNotBeNull();
-            settlementAccount.Data.AccountNumber.ShouldBe(request.AccountNumber);
-            settlementAccount.Data.BankCode.ShouldBe(request.BankCode);
-            settlementAccount.Data.Currency.ShouldBe(request.Currency);
-            settlementAccount.Data.AccountName.ShouldBe(request.AccountName);
+            var settlementAccountResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetSettlementAccountByNumber(request.AccountNumber, CancellationToken.None);
+            var settlementAccount = settlementAccountResult.Value.ShouldBeOfType<Success<SettlementAccountResponse>>().Value;
+            settlementAccount.ShouldNotBeNull();
+            settlementAccount.AccountNumber.ShouldBe(request.AccountNumber);
+            settlementAccount.BankCode.ShouldBe(request.BankCode);
+            settlementAccount.Currency.ShouldBe(request.Currency);
+            settlementAccount.AccountName.ShouldBe(request.AccountName);
         }
     }
 
@@ -180,18 +180,18 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.CreateSuperAgent(request, CancellationToken.None);
 
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
-            var agent = await this.TestingContext.DockerHelper.AgencyBankingClient.GetSuperAgentById(request.AgentId, CancellationToken.None);
-            agent.IsSuccess.ShouldBeTrue();
-            agent.Data.ShouldNotBeNull();
-            agent.Data.AgentId.ShouldBe(request.AgentId);
-            agent.Data.Name.ShouldBe(request.Name);
-            agent.Data.PhoneNumber.ShouldBe(request.PhoneNumber);
-            agent.Data.Email.ShouldBe(request.Email);
-            agent.Data.Region.ShouldBe(request.Region);
-            agent.Data.DailyLimit.ShouldBe(request.DailyLimit);
-            agent.Data.MinimumFloat.ShouldBe(request.MinimumFloat);
+            var agentResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetSuperAgentById(request.AgentId, CancellationToken.None);
+            var agent = agentResult.Value.ShouldBeOfType<Success<SuperAgentResponse>>().Value;
+            agent.ShouldNotBeNull();
+            agent.AgentId.ShouldBe(request.AgentId);
+            agent.Name.ShouldBe(request.Name);
+            agent.PhoneNumber.ShouldBe(request.PhoneNumber);
+            agent.Email.ShouldBe(request.Email);
+            agent.Region.ShouldBe(request.Region);
+            agent.DailyLimit.ShouldBe(request.DailyLimit);
+            agent.MinimumFloat.ShouldBe(request.MinimumFloat);
         }
 
         [When(@"I create a retail agent with:")]
@@ -214,19 +214,19 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.CreateRetailAgent(request, CancellationToken.None);
 
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
-            var agent = await this.TestingContext.DockerHelper.AgencyBankingClient.GetAgentById(request.AgentId, CancellationToken.None);
-            agent.IsSuccess.ShouldBeTrue();
-            agent.Data.ShouldNotBeNull();
-            agent.Data.AgentId.ShouldBe(request.AgentId);
-            agent.Data.SuperAgentId.ShouldBe(request.SuperAgentId);
-            agent.Data.Name.ShouldBe(request.Name);
-            agent.Data.PhoneNumber.ShouldBe(request.PhoneNumber);
-            agent.Data.Email.ShouldBe(request.Email);
-            agent.Data.Location.ShouldBe(request.Location);
-            agent.Data.DailyLimit.ShouldBe(request.DailyLimit);
-            agent.Data.MinimumFloat.ShouldBe(request.MinimumFloat);
+            var agentResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetAgentById(request.AgentId, CancellationToken.None);
+            var agent = agentResult.Value.ShouldBeOfType<Success<AgentResponse>>().Value;
+            agent.ShouldNotBeNull();
+            agent.AgentId.ShouldBe(request.AgentId);
+            agent.SuperAgentId.ShouldBe(request.SuperAgentId);
+            agent.Name.ShouldBe(request.Name);
+            agent.PhoneNumber.ShouldBe(request.PhoneNumber);
+            agent.Email.ShouldBe(request.Email);
+            agent.Location.ShouldBe(request.Location);
+            agent.DailyLimit.ShouldBe(request.DailyLimit);
+            agent.MinimumFloat.ShouldBe(request.MinimumFloat);
             
         }
 
@@ -241,13 +241,13 @@ namespace TestHosts.IntegrationTests
             }, CancellationToken.None);
 
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
-            Result<AgentResponse> agent = await this.TestingContext.DockerHelper.AgencyBankingClient.GetAgentById(agentId, CancellationToken.None);
-            agent.IsSuccess.ShouldBeTrue();
-            agent.Data.ShouldNotBeNull();
-            agent.Data.AgentId.ShouldBe(agentId);
-            agent.Data.Active.ShouldBeTrue();
+            var agentResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetAgentById(agentId, CancellationToken.None);
+            var agent = agentResult.Value.ShouldBeOfType<Success<AgentResponse>>().Value;
+            agent.ShouldNotBeNull();
+            agent.AgentId.ShouldBe(agentId);
+            agent.Active.ShouldBeTrue();
         }
     }
 
@@ -278,15 +278,15 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.ConfigureFloat(request, CancellationToken.None);
             
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
-            var floatConfiguration = await this.TestingContext.DockerHelper.AgencyBankingClient.GetFloatConfigurationByAgentId(agentId, CancellationToken.None);
-            floatConfiguration.IsSuccess.ShouldBeTrue();
-            floatConfiguration.Data.ShouldNotBeNull();
-            floatConfiguration.Data.AgentId.ShouldBe(agentId);
-            floatConfiguration.Data.MinimumFloat.ShouldBe(request.MinimumFloat);
-            floatConfiguration.Data.MaximumFloat.ShouldBe(request.MaximumFloat);
-            floatConfiguration.Data.DailyFloatLimit.ShouldBe(request.DailyFloatLimit);
+            var floatConfigurationResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetFloatConfigurationByAgentId(agentId, CancellationToken.None);
+            var floatConfiguration = floatConfigurationResult.Value.ShouldBeOfType<Success<FloatConfigurationResponse>>().Value;
+            floatConfiguration.ShouldNotBeNull();
+            floatConfiguration.AgentId.ShouldBe(agentId);
+            floatConfiguration.MinimumFloat.ShouldBe(request.MinimumFloat);
+            floatConfiguration.MaximumFloat.ShouldBe(request.MaximumFloat);
+            floatConfiguration.DailyFloatLimit.ShouldBe(request.DailyFloatLimit);
         }
 
         [When(@"I credit float to agent ""(.*)"" with:")]
@@ -306,16 +306,16 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.CreditFloat(request, CancellationToken.None);
 
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
-            var floatHistory = await this.TestingContext.DockerHelper.AgencyBankingClient.GetLastFloatEntries(agentId, 1, CancellationToken.None);
-            floatHistory.IsSuccess.ShouldBeTrue();
-            floatHistory.Data.ShouldNotBeNull();
-            floatHistory.Data.Count().ShouldBe(1);
-            floatHistory.Data[0].TransactionId.ShouldBe(request.TransactionId);
-            floatHistory.Data[0].AgentId.ShouldBe(agentId);
-            floatHistory.Data[0].Amount.ShouldBe(request.Amount);
-            floatHistory.Data[0].Narrative.ShouldBe(request.Narration);
+            var floatHistoryResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetLastFloatEntries(agentId, 1, CancellationToken.None);
+            var floatHistory = floatHistoryResult.Value.ShouldBeOfType<Success<FloatHistoryResponse[]>>().Value;
+            floatHistory.ShouldNotBeNull();
+            floatHistory.Count().ShouldBe(1);
+            floatHistory[0].TransactionId.ShouldBe(request.TransactionId);
+            floatHistory[0].AgentId.ShouldBe(agentId);
+            floatHistory[0].Amount.ShouldBe(request.Amount);
+            floatHistory[0].Narrative.ShouldBe(request.Narration);
         }
     }
 
@@ -344,16 +344,16 @@ namespace TestHosts.IntegrationTests
             var result = await this.TestingContext.DockerHelper.AgencyBankingClient.CreateCustomer(request, CancellationToken.None);
 
             // TODO: add assertions
-            result.IsSuccess.ShouldBeTrue();
+            result.IsSuccess().ShouldBeTrue();
             
-            var customer = await this.TestingContext.DockerHelper.AgencyBankingClient.GetCustomerByAccountNumber(request.AccountNumber, CancellationToken.None);
-            customer.IsSuccess.ShouldBeTrue();
-            customer.Data.ShouldNotBeNull();
-            customer.Data.CustomerId.ShouldBe(request.CustomerId);
-            customer.Data.FullName.ShouldBe(request.FullName);
-            customer.Data.PhoneNumber.ShouldBe(request.PhoneNumber);
-            customer.Data.NationalId.ShouldBe(request.NationalId);
-            customer.Data.AccountNumber.ShouldBe(request.AccountNumber);
+            var customerResult = await this.TestingContext.DockerHelper.AgencyBankingClient.GetCustomerByAccountNumber(request.AccountNumber, CancellationToken.None);
+            var customer = customerResult.Value.ShouldBeOfType<Success<CustomerResponse>>().Value;
+            customer.ShouldNotBeNull();
+            customer.CustomerId.ShouldBe(request.CustomerId);
+            customer.FullName.ShouldBe(request.FullName);
+            customer.PhoneNumber.ShouldBe(request.PhoneNumber);
+            customer.NationalId.ShouldBe(request.NationalId);
+            customer.AccountNumber.ShouldBe(request.AccountNumber);
         }
     }
 }
